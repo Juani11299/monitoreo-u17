@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MONITOREO U17 — Selección Argentina</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#0b1622;--card:#112236;--card2:#172d47;--border:#1e3a5a;
+  --blue:#74acdf;--white:#e8f0fa;--muted:#6a8aaa;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+  --green-bg:rgba(34,197,94,.15);--yellow-bg:rgba(245,158,11,.15);--red-bg:rgba(239,68,68,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--white);min-height:100vh;font-size:14px}
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:linear-gradient(135deg,#0d1f35 0%,#1a3a6e 100%);border-bottom:2px solid var(--blue);gap:16px}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-flag{width:48px;height:32px;background:linear-gradient(to bottom,#74acdf 33%,#fff 33%,#fff 66%,#74acdf 66%);border:1px solid #aaa;border-radius:2px;flex-shrink:0}
+.hdr-title{font-size:20px;font-weight:800;color:var(--white);letter-spacing:1px}
+.hdr-sub{font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:2px}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.last-updated{font-size:11px;color:var(--muted)}
+.btn-refresh{background:linear-gradient(135deg,#1a5cb8,#0f8fd4);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.5px;transition:all .2s;white-space:nowrap}
+.btn-refresh:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(20,100,220,.4)}
+.btn-refresh.spinning{animation:spin-pulse .6s ease-in-out 3}
+@keyframes spin-pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+/* TABS NAV */
+.tabs-nav{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--border);gap:0}
+.tabs-nav::-webkit-scrollbar{height:3px}
+.tabs-nav::-webkit-scrollbar-thumb{background:var(--border)}
+.tab-btn{background:none;border:none;color:var(--muted);padding:13px 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s}
+.tab-btn:hover{color:var(--white);background:rgba(255,255,255,.04)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+/* MAIN */
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* CARDS */
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.card-value{font-size:24px;font-weight:800;color:var(--white)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--card)}
+th{background:var(--card2);color:var(--blue);font-size:11px;text-transform:uppercase;letter-spacing:.8px;padding:10px 12px;text-align:left;white-space:nowrap;font-weight:700}
+td{padding:9px 12px;border-top:1px solid var(--border);font-size:13px;color:var(--white);white-space:nowrap}
+tr:hover td{background:rgba(116,172,223,.06)}
+/* TRAFFIC LIGHTS */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.pill-green{background:var(--green-bg);color:var(--green)}
+.pill-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.pill-red{background:var(--red-bg);color:var(--red)}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-green{background:var(--green)}
+.dot-yellow{background:var(--yellow)}
+.dot-red{background:var(--red)}
+/* CHARTS */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:768px){.chart-row{grid-template-columns:1fr}}
+/* FILTERS */
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:12px;color:var(--muted)}
+select,input[type=text]{background:var(--card2);border:1px solid var(--border);color:var(--white);padding:7px 12px;border-radius:7px;font-size:13px;outline:none}
+select:focus,input:focus{border-color:var(--blue)}
+select option{background:var(--card2)}
+/* SECTION TITLE */
+.section-title{font-size:15px;font-weight:700;color:var(--white);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+/* STATUS BADGE */
+.badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+/* WELLNESS CHART CONTAINER */
+.player-select-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.comments-list{margin-top:16px}
+.comment-item{background:var(--card2);border-left:3px solid var(--yellow);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:8px}
+/* WELLNESS EQUIPO */
+.mode-toggle{display:flex;gap:0;background:var(--card2);border-radius:8px;padding:3px;border:1px solid var(--border)}
+.mode-btn{background:transparent;border:none;color:var(--muted);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.mode-btn.active{background:var(--blue);color:#0b1622}
+.response-badge{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:12px;color:var(--muted)}
+.response-badge strong{color:var(--white)}
+.alert-box{border-radius:10px;padding:14px 18px;margin-bottom:10px}
+.alert-box-red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)}
+.alert-box-yellow{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3)}
+.alert-box-title{font-size:11px;font-weight:800;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.alert-box-red .alert-box-title{color:#ef4444}
+.alert-box-yellow .alert-box-title{color:#f59e0b}
+.alert-tags{display:flex;flex-wrap:wrap;gap:6px}
+.alert-tag-red{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.alert-tag-yellow{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.heatmap-cell{text-align:center!important;font-weight:800!important;font-size:17px!important;padding:10px 6px!important}
+.dist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px}
+.dist-card{background:var(--card2);border-radius:10px;padding:14px;border:1px solid var(--border)}
+.dist-dim-title{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.dist-row{display:flex;align-items:flex-start;gap:10px;padding:5px 8px;border-radius:6px;margin-bottom:4px}
+.dist-val{font-weight:800;font-size:16px;min-width:16px;text-align:center}
+.dist-names{font-size:12px;color:#c8d8ea;line-height:1.5}
+/* PLAYER CARD */
+.player-profile{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start}
+@media(max-width:700px){.player-profile{grid-template-columns:1fr}}
+.player-avatar-col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.player-avatar-ring{width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#1a5cb8);padding:3px;cursor:pointer;position:relative;flex-shrink:0}
+.player-avatar-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:var(--white);overflow:hidden}
+.player-avatar-img img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.player-avatar-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:.2s;cursor:pointer;font-size:11px;color:#fff;font-weight:700;gap:4px}
+.player-avatar-ring:hover .player-avatar-overlay{opacity:1}
+.player-name-big{font-size:26px;font-weight:900;color:var(--white);line-height:1.2;margin-bottom:4px}
+.player-pos-tag{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(116,172,223,.15);border:1px solid rgba(116,172,223,.3);color:var(--blue);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
+.player-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.player-kpi{background:var(--card2);border-radius:10px;padding:12px 14px;border:1px solid var(--border)}
+.player-kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:700}
+.player-kpi-val{font-size:22px;font-weight:900;line-height:1}
+.player-kpi-sub{font-size:10px;margin-top:4px;font-weight:600}
+.estado-banner{border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.estado-banner-g{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)}
+.estado-banner-y{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
+.estado-banner-r{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3)}
+.estado-banner-label{font-size:14px;font-weight:800}
+.estado-banner-rec{font-size:12px;color:var(--muted);margin-top:2px}
+.mc-history{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:4px}
+.mc-hist-card{background:var(--card2);border-radius:10px;padding:12px;border:1px solid var(--border);border-top:3px solid var(--border)}
+.mc-hist-card.active-mc{border-top-color:var(--blue)}
+.mc-hist-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.mc-hist-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.mc-hist-key{font-size:11px;color:var(--muted)}
+.mc-hist-val{font-size:12px;font-weight:700}
+/* NUEVA SESION FORM */
+.ns-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.ns-header h2{font-size:20px;font-weight:800;color:var(--white);margin:0}
+.ns-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.ns-field label{display:block;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.ns-field input,.ns-field select{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-size:14px;font-weight:600;outline:none;transition:border .15s}
+.ns-field input:focus,.ns-field select:focus{border-color:var(--blue)}
+.ns-field input[type=number]{-moz-appearance:textfield}
+.ns-players-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+.ns-players-table th{background:var(--card2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;padding:8px 12px;text-align:left;font-weight:700;position:sticky;top:0}
+.ns-players-table td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.ns-players-table tr:hover td{background:rgba(116,172,223,.04)}
+.ns-players-table tr.unchecked td{opacity:.45}
+.ns-chk{width:18px;height:18px;accent-color:var(--blue);cursor:pointer}
+.ns-summary{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.ns-summary-item{text-align:center}
+.ns-summary-val{font-size:20px;font-weight:800;color:var(--white)}
+.ns-summary-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.btn-save{background:linear-gradient(135deg,#1a5cb8,#74acdf);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;transition:opacity .15s;letter-spacing:.3px}
+.btn-save:hover{opacity:.85}
+.btn-save:disabled{opacity:.4;cursor:not-allowed}
+.hist-row-saved{border-left:3px solid var(--blue)}
+.hist-row-saved td:first-child::before{content:'APP ';font-size:9px;color:var(--blue);font-weight:800}
+.btn-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;opacity:.6;transition:.15s}
+.btn-del:hover{opacity:1;background:rgba(239,68,68,.1)}
+.comment-date{font-size:11px;color:var(--muted)}
+.comment-text{font-size:13px;color:var(--white);margin-top:3px}
+/* JUGADORES GRID */
+.jugadores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.jugador-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:10px}
+.jugador-num{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a5cb8,#74acdf);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.jugador-name{font-size:13px;font-weight:600}
+.jugador-pos{font-size:11px;color:var(--muted)}
+/* RPE ZONE LEGEND */
+.legend-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+/* TOOLTIP OVERRIDE */
+.tooltip-box{background:var(--card2)!important;border:1px solid var(--border)!important}
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+/* MISC */
+.mb16{margin-bottom:16px}
+.mt16{margin-top:16px}
+.text-right{text-align:right}
+.text-muted{color:var(--muted)}
+/* AUTH */
+.btn-auth{background:var(--card2);border:1px solid var(--border);color:var(--blue);padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:.3px}
+.btn-auth:hover{border-color:var(--blue);background:rgba(116,172,223,.1)}
+.btn-auth.connected{color:var(--red);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+.live-wrap{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.dot-live{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite}
+.dot-offline{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot-error{width:8px;height:8px;border-radius:50%;background:var(--yellow);display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-flag"></div>
+    <div>
+      <div class="hdr-title">MONITOREO U17</div>
+      <div class="hdr-sub">Selección Argentina · Vóleibol</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-wrap">
+      <span id="live-dot"><span class="dot-offline"></span></span>
+      <span id="live-text">Sin conexión</span>
+    </div>
+    <span class="last-updated" id="last-updated">—</span>
+    <button class="btn-auth" id="btn-auth">⟢ Conectar con Google</button>
+    <button class="btn-refresh" id="btn-refresh">⟳ MONITOREO U17</button>
+  </div>
+</header>
+
+<nav class="tabs-nav" id="tabs-nav">
+  <button class="tab-btn active" data-tab="grupal">Dashboard Grupal</button>
+  <button class="tab-btn" data-tab="metricas">Métricas Ind.</button>
+  <button class="tab-btn" data-tab="estimulos">Estímulos</button>
+  <button class="tab-btn" data-tab="posiciones">Posiciones</button>
+  <button class="tab-btn" data-tab="wellness">Wellness</button>
+  <button class="tab-btn" data-tab="rpe">RPE</button>
+  <button class="tab-btn" data-tab="base">Base de Datos</button>
+  <button class="tab-btn" data-tab="jugadores">Jugadores</button>
+</nav>
+
+<main>
+  <div id="tab-grupal" class="tab-panel active"></div>
+  <div id="tab-metricas" class="tab-panel"></div>
+  <div id="tab-estimulos" class="tab-panel"></div>
+  <div id="tab-posiciones" class="tab-panel"></div>
+  <div id="tab-wellness" class="tab-panel"></div>
+  <div id="tab-rpe" class="tab-panel"></div>
+  <div id="tab-base" class="tab-panel"></div>
+  <div id="tab-jugadores" class="tab-panel"></div>
+</main>
+
+<script>
+/* ===== GOOGLE OAUTH — SOLO LECTURA, NUNCA ESCRIBE EN EL SHEET ===== */
+
+const CLIENT_ID = '364089274737-pqs25ufhkt5hejb7eard512h8rjjg5ke.apps.googleusercontent.com';
+const API_KEY   = 'AIzaSyAo0YHacBhKWpZsVbeNeQxFj7asfZP9IxU';
+const SHEET_ID  = '1-6yGXFdXnKuNY4h-gTjJrEwisUAuQtHV6FwbrIUDqN4';
+const SCOPE     = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+// Nombres exactos de cada pestaña en el Google Sheets (MAYÚSCULAS)
+const TABS = {
+  wellness  : 'FORM_WELLNESS',
+  rpe       : 'FORM_RPE',
+  metricas  : 'METRICAS_INDIVIDUALES',
+  grupal    : 'DASHBOARD_GRUPAL',
+  estimulos : 'DASH_ESTIMULOS',
+  posiciones: 'DASH_POSICIONES',
+  jugadores : 'LISTA_JUGADORES',
+};
+
+let _token       = null;
+let _tokenClient = null;
+let _connected   = false;
+let _lastFetch   = null;
+let _autoTimer   = null;
+
+/* ---- Inicializar Google Identity Services ---- */
+function initGIS() {
+  if (!window.google?.accounts?.oauth2) { setTimeout(initGIS, 200); return; }
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPE,
+    callback: async (resp) => {
+      if (resp.error) {
+        // Si el auto-login silencioso falló, mostrar botón para login manual
+        if (resp.error === 'interaction_required' || resp.error === 'login_required') {
+          setLiveUI('offline', 'Conectá para ver datos en vivo');
+          return;
+        }
+        setLiveUI('error', 'Error de login');
+        return;
+      }
+      _token = resp.access_token;
+      _connected = true;
+      localStorage.setItem('gauth_was_connected', '1');
+      document.getElementById('btn-auth').textContent = '✕ Desconectar';
+      document.getElementById('btn-auth').classList.add('connected');
+      setLiveUI('loading', 'Cargando datos en vivo...');
+      await loadLiveData();
+      startAutoRefresh();
+    }
+  });
+  // Intentar auto-login silencioso si el usuario ya conectó antes
+  if (localStorage.getItem('gauth_was_connected')) {
+    setLiveUI('loading', 'Reconectando...');
+    _tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+window.addEventListener('load', () => setTimeout(initGIS, 400));
+
+/* ---- Botón conectar / desconectar ---- */
+function handleAuth() {
+  if (_connected) {
+    _connected = false; _token = null;
+    localStorage.removeItem('gauth_was_connected');
+    if (_autoTimer) clearInterval(_autoTimer);
+    document.getElementById('btn-auth').textContent = '⟢ Conectar con Google';
+    document.getElementById('btn-auth').classList.remove('connected');
+    setLiveUI('offline', 'Sin conexión');
+    return;
+  }
+  if (!_tokenClient) { initGIS(); setTimeout(handleAuth, 500); return; }
+  _tokenClient.requestAccessToken({ prompt: '' });
+}
+
+/* ---- Indicador visual ---- */
+function setLiveUI(state, text) {
+  const dot  = document.getElementById('live-dot');
+  const txt  = document.getElementById('live-text');
+  txt.textContent = text;
+  const map  = { live:'dot-live', offline:'dot-offline', loading:'dot-offline', error:'dot-error' };
+  dot.innerHTML  = `<span class="${map[state]||'dot-offline'}"></span>`;
+}
+
+function timeSince(d) {
+  const m = Math.floor((Date.now() - d) / 60000);
+  if (m < 1) return 'ahora mismo';
+  return `hace ${m} min`;
+}
+
+/* ---- Fetch de una pestaña ---- */
+async function fetchTab(tab) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tab)}?majorDimension=ROWS&key=${API_KEY}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${_token}` } });
+  if (res.status === 401) throw new Error('TOKEN_EXPIRED');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()).values || [];
+}
+
+/* ---- Parsers — convierten filas crudas al formato interno ---- */
+const pn = s => parseFloat(String(s||'0').replace(',','.')) || 0;
+
+function _parseWellness(rows) {
+  return rows.slice(1).filter(r=>r[1]).map(r=>[
+    (r[0]||'').split(' ')[0], r[1]||'',
+    +r[2]||0, +r[3]||0, +r[4]||0, +r[5]||0, +r[6]||0, r[7]||''
+  ]);
+}
+function _parseRPE(rows) {
+  return rows.slice(1).filter(r=>r[1]).map(r=>[
+    (r[0]||'').split(' ')[0], r[1]||'', +r[2]||0, r[3]||''
+  ]);
+}
+function _parseMetricas(rows) {
+  return rows.slice(1).filter(r=>r[0]).map(r=>[
+    r[0], +r[1]||0, r[2]||'',
+    pn(r[3]), +r[4]||0, pn(r[5]), pn(r[6]),
+    pn(r[7]), pn(r[8]), pn(r[9]), pn(r[10]),
+    pn(r[11]), pn(r[12]),
+    r[13]||'', r[14]||'', r[15]||''
+  ]);
+}
+function _parseGrupal(rows) {
+  return rows.slice(1).filter(r=>r[0]).map(r=>[
+    +r[0]||0, +r[1]||0, pn(r[2]), pn(r[3]), pn(r[4]), pn(r[5]), pn(r[6])
+  ]);
+}
+function _parseEstimulos(rows) {
+  return rows.slice(1).filter(r=>r[0]).map(r=>[
+    r[0], +r[1]||0, pn(r[2]), pn(r[3]), pn(r[4]), pn(r[5])
+  ]);
+}
+function _parsePosiciones(rows) {
+  return rows.slice(1).filter(r=>r[0]).map(r=>[
+    r[0], +r[1]||0, pn(r[2]), pn(r[3]), pn(r[4]), pn(r[5]), pn(r[6])
+  ]);
+}
+function _parseJugadores(rows) {
+  return rows.slice(1).filter(r=>r[0]).map(r=>[r[0]||'', r[1]||'']);
+}
+
+/* ---- Cargar todos los datos en vivo ---- */
+async function loadLiveData() {
+  try {
+    setLiveUI('loading','Actualizando...');
+    const [wR,rR,mR,gR,eR,pR,jR] = await Promise.all([
+      fetchTab(TABS.wellness), fetchTab(TABS.rpe),
+      fetchTab(TABS.metricas), fetchTab(TABS.grupal),
+      fetchTab(TABS.estimulos), fetchTab(TABS.posiciones),
+      fetchTab(TABS.jugadores),
+    ]);
+    // Reemplazar arrays internos EN LUGAR (no modifica el Sheet, solo la memoria de la app)
+    WELLNESS_RAW.splice(0, Infinity, ..._parseWellness(wR));
+    RPE_RAW.splice(0, Infinity, ..._parseRPE(rR));
+    METRICAS_RAW.splice(0, Infinity, ..._parseMetricas(mR));
+    GRUPAL_RAW.splice(0, Infinity, ..._parseGrupal(gR));
+    ESTIMULOS_RAW.splice(0, Infinity, ..._parseEstimulos(eR));
+    POSICIONES_RAW.splice(0, Infinity, ..._parsePosiciones(pR));
+    JUGADORES.splice(0, Infinity, ..._parseJugadores(jR));
+
+    _lastFetch = Date.now();
+    setLiveUI('live', `En vivo · ${timeSince(_lastFetch)}`);
+
+    const now = new Date();
+    document.getElementById('last-updated').textContent =
+      `Última actualización: ${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+
+    // Re-renderizar la pestaña activa con datos nuevos
+    const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+    if (activeTab) renderActiveTab(activeTab);
+
+  } catch(err) {
+    console.error('[MONITOREO] Error al leer el Sheet:', err.message);
+    if (err.message === 'TOKEN_EXPIRED') {
+      _token = null; _connected = false;
+      setLiveUI('offline','Sesión expirada — reconectá');
+      document.getElementById('btn-auth').textContent = '⟢ Conectar con Google';
+      document.getElementById('btn-auth').classList.remove('connected');
+    } else {
+      setLiveUI('error', 'Error al actualizar');
+    }
+  }
+}
+
+/* ---- Auto-refresh cada 30 segundos ---- */
+function startAutoRefresh() {
+  if (_autoTimer) clearInterval(_autoTimer);
+  _autoTimer = setInterval(async () => {
+    if (_connected && _token) await loadLiveData();
+  }, 30000);
+}
+// Actualizar el texto del indicador cada 10 seg sin refetch
+setInterval(() => {
+  if (_lastFetch && _connected)
+    setLiveUI('live', `En vivo · ${timeSince(_lastFetch)}`);
+}, 10000);
+
+/* ===== DATA ===== */
+
+const JUGADORES = [
+  ['Alonso Bautista','Opuesto'],['Alonso Manuel','Punta'],['Betch Tobias','Punta'],
+  ['Bianchi Valentin','Punta'],['Briozzi Valentino','Punta'],['Demarco Salvador','Libero'],
+  ['Ganino Lazaro','Opuesto'],['Jacuzi Maximiliano','Central'],['Kuthnik Ciro','Central'],
+  ['Maciel Santino','Central'],['Mendoza Máximo','Punta'],['Moyano Augusto','Punta'],
+  ['Nazarre Tomas','Central'],['Oropel Francisco','Armador'],['Palavecino Nicanor','Armador'],
+  ['Pereyra Ian','Punta'],['Quaini Santiago','Armador'],['Vera Nuriel','Armador'],
+  ['Zalazar Facundo','Punta']
+];
+
+// WELLNESS: [fecha, jugador, sue, can, dom, est, ani, comentario]
+// sue=sueño, can=cansancio, dom=dolor_muscular, est=estres, ani=animo/energia
+const WELLNESS_RAW = [
+['20/04/2026','Maciel Santino',3,2,5,3,3,''],
+['20/04/2026','Quaini Santiago',3,3,4,4,3,''],
+['20/04/2026','Pereyra Ian',4,3,3,2,4,''],
+['20/04/2026','Kuthnik Ciro',4,4,5,5,4,''],
+['20/04/2026','Nazarre Tomas',3,3,5,4,3,''],
+['20/04/2026','Demarco Salvador',3,3,4,5,4,''],
+['20/04/2026','Briozzi Valentino',3,3,4,4,3,''],
+['20/04/2026','Ganino Lazaro',4,3,2,2,4,''],
+['20/04/2026','Alonso Manuel',5,5,4,4,5,''],
+['20/04/2026','Vera Nuriel',4,4,5,5,5,''],
+['20/04/2026','Zalazar Facundo',3,4,4,4,4,''],
+['20/04/2026','Alonso Bautista',3,4,5,5,4,''],
+['20/04/2026','Oropel Francisco',5,5,4,4,5,''],
+['20/04/2026','Bianchi Valentin',3,4,5,5,5,''],
+['20/04/2026','Mendoza Máximo',2,3,3,2,2,''],
+['21/04/2026','Maciel Santino',5,4,5,5,5,''],
+['21/04/2026','Kuthnik Ciro',4,4,5,5,4,''],
+['21/04/2026','Pereyra Ian',3,4,3,4,4,''],
+['21/04/2026','Oropel Francisco',4,4,4,4,4,''],
+['21/04/2026','Alonso Manuel',5,4,4,5,4,''],
+['21/04/2026','Zalazar Facundo',3,4,4,4,4,''],
+['21/04/2026','Mendoza Máximo',4,2,3,3,3,''],
+['21/04/2026','Quaini Santiago',3,3,3,4,4,''],
+['21/04/2026','Demarco Salvador',4,4,4,5,5,''],
+['21/04/2026','Briozzi Valentino',4,4,4,3,3,''],
+['21/04/2026','Vera Nuriel',5,4,4,5,4,''],
+['21/04/2026','Alonso Bautista',4,4,5,5,4,''],
+['21/04/2026','Jacuzi Maximiliano',4,3,5,4,4,''],
+['21/04/2026','Ganino Lazaro',4,4,5,5,5,''],
+['21/04/2026','Nazarre Tomas',4,4,5,3,4,''],
+['21/04/2026','Bianchi Valentin',4,4,4,5,4,''],
+['22/04/2026','Briozzi Valentino',3,4,4,4,3,''],
+['22/04/2026','Ganino Lazaro',4,4,3,5,5,''],
+['22/04/2026','Kuthnik Ciro',4,4,5,4,5,''],
+['22/04/2026','Pereyra Ian',3,3,4,4,4,''],
+['22/04/2026','Nazarre Tomas',4,4,5,4,4,''],
+['22/04/2026','Quaini Santiago',3,2,3,4,3,''],
+['22/04/2026','Bianchi Valentin',3,3,4,5,2,''],
+['22/04/2026','Oropel Francisco',4,4,4,4,4,''],
+['22/04/2026','Zalazar Facundo',3,3,4,4,3,''],
+['22/04/2026','Maciel Santino',5,4,5,5,4,''],
+['22/04/2026','Vera Nuriel',4,4,4,5,4,''],
+['22/04/2026','Jacuzi Maximiliano',4,3,3,4,3,''],
+['22/04/2026','Demarco Salvador',4,4,4,4,4,''],
+['22/04/2026','Mendoza Máximo',3,3,2,4,4,''],
+['22/04/2026','Alonso Bautista',3,3,4,5,3,''],
+['22/04/2026','Alonso Manuel',4,4,3,4,5,''],
+['23/04/2026','Jacuzi Maximiliano',4,3,4,4,3,''],
+['23/04/2026','Alonso Manuel',5,4,3,4,5,''],
+['23/04/2026','Bianchi Valentin',4,3,3,3,2,''],
+['23/04/2026','Zalazar Facundo',4,3,3,3,3,''],
+['23/04/2026','Quaini Santiago',4,3,3,3,3,''],
+['23/04/2026','Alonso Bautista',4,3,4,4,3,''],
+['23/04/2026','Vera Nuriel',4,3,3,4,4,''],
+['23/04/2026','Demarco Salvador',4,4,4,4,5,''],
+['23/04/2026','Pereyra Ian',3,4,3,4,4,''],
+['23/04/2026','Maciel Santino',5,4,4,3,4,''],
+['23/04/2026','Briozzi Valentino',4,3,2,4,4,''],
+['23/04/2026','Ganino Lazaro',4,4,4,5,5,''],
+['23/04/2026','Oropel Francisco',4,4,4,3,4,''],
+['23/04/2026','Kuthnik Ciro',4,4,5,3,3,''],
+['23/04/2026','Nazarre Tomas',4,4,5,4,4,''],
+['23/04/2026','Mendoza Máximo',4,3,3,4,3,''],
+['24/04/2026','Alonso Manuel',4,4,3,5,5,''],
+['24/04/2026','Jacuzi Maximiliano',4,4,3,4,3,''],
+['24/04/2026','Bianchi Valentin',5,4,4,5,4,''],
+['24/04/2026','Quaini Santiago',4,3,3,4,4,''],
+['24/04/2026','Zalazar Facundo',4,4,3,4,4,''],
+['24/04/2026','Kuthnik Ciro',5,3,3,3,4,''],
+['24/04/2026','Alonso Bautista',5,4,4,5,4,''],
+['24/04/2026','Briozzi Valentino',5,3,2,4,4,''],
+['24/04/2026','Ganino Lazaro',4,4,4,5,5,''],
+['24/04/2026','Maciel Santino',5,4,5,1,5,''],
+['24/04/2026','Oropel Francisco',4,4,4,4,4,''],
+['24/04/2026','Vera Nuriel',2,3,4,4,4,''],
+['24/04/2026','Pereyra Ian',3,3,4,3,4,''],
+['24/04/2026','Nazarre Tomas',5,4,4,4,4,'en dolor de piernas no está la opción de 4,5'],
+['24/04/2026','Mendoza Máximo',5,4,3,5,5,'pequeña molestia en la planta del pie'],
+['24/04/2026','Demarco Salvador',4,4,3,4,3,''],
+['25/04/2026','Alonso Manuel',5,4,3,5,5,''],
+['25/04/2026','Maciel Santino',5,4,4,4,4,''],
+['25/04/2026','Jacuzi Maximiliano',4,4,4,3,3,''],
+['25/04/2026','Kuthnik Ciro',4,4,3,4,4,''],
+['25/04/2026','Pereyra Ian',4,3,3,3,3,'mucho dolor de hombro'],
+['25/04/2026','Ganino Lazaro',5,4,4,5,5,''],
+['25/04/2026','Oropel Francisco',4,4,4,4,4,''],
+['25/04/2026','Briozzi Valentino',5,3,2,4,4,''],
+['25/04/2026','Alonso Bautista',4,3,4,5,4,''],
+['25/04/2026','Vera Nuriel',4,3,3,4,4,'Dolor de espalda'],
+['25/04/2026','Nazarre Tomas',4,4,5,4,4,''],
+['25/04/2026','Zalazar Facundo',5,4,4,3,3,''],
+['25/04/2026','Bianchi Valentin',4,3,3,4,3,''],
+['25/04/2026','Quaini Santiago',4,2,2,2,4,'quiero entrenar pero no sé si podré, mejoro la rodilla'],
+['25/04/2026','Mendoza Máximo',5,4,2,5,3,'mejoro un poco el dolor de la pierna'],
+['25/04/2026','Demarco Salvador',5,3,4,4,3,''],
+['25/04/2026','Palavecino Nicanor',4,4,5,5,5,''],
+['26/04/2026','Zalazar Facundo',4,4,4,4,4,''],
+['26/04/2026','Jacuzi Maximiliano',3,3,4,3,3,''],
+['26/04/2026','Alonso Manuel',4,4,3,4,4,''],
+['26/04/2026','Alonso Bautista',4,3,4,5,3,''],
+['26/04/2026','Maciel Santino',5,4,5,4,3,''],
+['26/04/2026','Quaini Santiago',4,3,3,3,4,''],
+['26/04/2026','Pereyra Ian',4,3,2,3,3,''],
+['26/04/2026','Bianchi Valentin',4,3,3,4,2,'cuádriceps derecho'],
+['26/04/2026','Ganino Lazaro',5,5,4,5,5,''],
+['26/04/2026','Briozzi Valentino',4,3,2,4,3,''],
+['26/04/2026','Vera Nuriel',4,4,3,4,4,'dolor de espalda'],
+['26/04/2026','Palavecino Nicanor',4,4,4,5,4,''],
+['26/04/2026','Mendoza Máximo',4,4,3,4,5,''],
+['26/04/2026','Oropel Francisco',4,4,4,4,4,''],
+['26/04/2026','Kuthnik Ciro',5,3,4,4,4,''],
+['26/04/2026','Nazarre Tomas',4,4,5,4,3,''],
+['26/04/2026','Demarco Salvador',4,4,4,4,5,''],
+['15/05/2026','Ganino Lazaro',4,4,4,5,5,'dolor en zona media'],
+['15/05/2026','Maciel Santino',5,5,5,4,5,''],
+['15/05/2026','Kuthnik Ciro',4,5,5,5,5,''],
+['15/05/2026','Pereyra Ian',3,4,3,2,3,'Dolor de cabeza, hombro derecho'],
+['15/05/2026','Palavecino Nicanor',5,5,4,5,5,''],
+['15/05/2026','Moyano Augusto',5,4,4,5,5,''],
+['15/05/2026','Bianchi Valentin',4,4,4,5,4,''],
+['15/05/2026','Zalazar Facundo',4,4,4,5,5,''],
+['15/05/2026','Alonso Manuel',5,5,4,5,5,''],
+['15/05/2026','Quaini Santiago',4,3,3,4,4,''],
+['15/05/2026','Vera Nuriel',4,4,5,5,5,''],
+['15/05/2026','Mendoza Máximo',4,4,4,4,4,''],
+['15/05/2026','Nazarre Tomas',4,5,5,5,5,''],
+['15/05/2026','Briozzi Valentino',5,4,4,5,4,''],
+['15/05/2026','Demarco Salvador',4,4,5,5,4,''],
+['16/05/2026','Maciel Santino',4,4,5,2,5,''],
+['16/05/2026','Kuthnik Ciro',4,5,3,5,5,''],
+['16/05/2026','Pereyra Ian',4,3,3,4,4,'Dolor de espalda'],
+['16/05/2026','Moyano Augusto',4,4,5,5,4,''],
+['16/05/2026','Ganino Lazaro',4,4,5,5,5,''],
+['16/05/2026','Quaini Santiago',3,3,3,4,4,''],
+['16/05/2026','Alonso Manuel',5,5,4,4,5,''],
+['16/05/2026','Bianchi Valentin',5,4,3,3,4,''],
+['16/05/2026','Zalazar Facundo',5,4,3,4,4,''],
+['16/05/2026','Nazarre Tomas',4,4,5,4,4,''],
+['16/05/2026','Palavecino Nicanor',4,3,3,3,3,''],
+['16/05/2026','Vera Nuriel',4,5,5,5,5,''],
+['16/05/2026','Mendoza Máximo',4,3,4,3,4,''],
+['17/05/2026','Kuthnik Ciro',5,5,4,5,5,''],
+['17/05/2026','Nazarre Tomas',3,4,3,4,5,''],
+['17/05/2026','Maciel Santino',5,5,4,4,5,''],
+['17/05/2026','Alonso Manuel',4,4,5,3,3,''],
+['17/05/2026','Bianchi Valentin',4,3,3,4,3,''],
+['17/05/2026','Demarco Salvador',3,4,4,5,4,'me desperte a la noche con frio'],
+['17/05/2026','Ganino Lazaro',5,5,3,5,5,''],
+['17/05/2026','Vera Nuriel',4,4,4,5,4,''],
+['17/05/2026','Briozzi Valentino',5,4,3,5,4,''],
+['17/05/2026','Palavecino Nicanor',4,4,3,4,4,''],
+['17/05/2026','Zalazar Facundo',5,4,2,5,4,''],
+['17/05/2026','Moyano Augusto',5,4,4,5,4,''],
+['17/05/2026','Pereyra Ian',4,3,3,4,4,''],
+['17/05/2026','Mendoza Máximo',5,3,3,4,4,''],
+['17/05/2026','Jacuzi Maximiliano',4,4,4,4,4,''],
+['17/05/2026','Quaini Santiago',3,2,2,3,3,''],
+['18/05/2026','Moyano Augusto',4,4,5,5,5,''],
+['18/05/2026','Kuthnik Ciro',2,3,3,4,4,'Me duele la espalda'],
+['18/05/2026','Palavecino Nicanor',4,4,3,4,4,''],
+['18/05/2026','Ganino Lazaro',5,5,4,5,5,''],
+['18/05/2026','Briozzi Valentino',4,4,3,5,4,''],
+['18/05/2026','Jacuzi Maximiliano',4,4,3,4,4,''],
+['18/05/2026','Vera Nuriel',4,4,4,5,4,''],
+['18/05/2026','Bianchi Valentin',3,4,3,4,3,'me levante varias veces a la madrugada'],
+['18/05/2026','Alonso Manuel',5,4,4,3,4,''],
+['18/05/2026','Nazarre Tomas',4,4,4,4,4,''],
+['18/05/2026','Quaini Santiago',4,3,3,4,5,''],
+['18/05/2026','Demarco Salvador',4,4,4,4,4,''],
+['18/05/2026','Mendoza Máximo',4,4,3,4,4,''],
+['09/06/2026','Quaini Santiago',3,3,4,4,4,''],
+['09/06/2026','Moyano Augusto',5,3,4,5,5,''],
+['09/06/2026','Ganino Lazaro',5,4,5,5,5,''],
+['09/06/2026','Maciel Santino',5,5,4,5,5,''],
+['09/06/2026','Bianchi Valentin',4,3,4,5,5,''],
+['09/06/2026','Zalazar Facundo',4,4,4,5,5,''],
+['09/06/2026','Alonso Manuel',4,4,5,2,3,''],
+['09/06/2026','Jacuzi Maximiliano',4,4,4,4,4,''],
+['09/06/2026','Mendoza Máximo',5,5,4,4,4,''],
+['09/06/2026','Pereyra Ian',4,4,3,4,4,''],
+['09/06/2026','Briozzi Valentino',5,5,4,5,5,''],
+['09/06/2026','Vera Nuriel',4,4,4,5,4,'dolor espalda baja'],
+['09/06/2026','Demarco Salvador',4,4,5,5,4,''],
+['10/06/2026','Jacuzi Maximiliano',4,4,4,4,4,''],
+['10/06/2026','Zalazar Facundo',3,4,4,5,5,''],
+['10/06/2026','Moyano Augusto',4,4,4,5,4,''],
+['10/06/2026','Bianchi Valentin',4,3,2,5,4,''],
+['10/06/2026','Maciel Santino',4,4,4,5,4,''],
+['10/06/2026','Demarco Salvador',4,4,4,5,3,''],
+['10/06/2026','Pereyra Ian',4,3,4,4,5,''],
+['10/06/2026','Betch Tobías',4,4,4,5,4,''],
+['10/06/2026','Briozzi Valentino',4,4,5,4,5,''],
+['10/06/2026','Quaini Santiago',4,3,2,3,4,''],
+['10/06/2026','Mendoza Máximo',4,4,4,4,4,''],
+['10/06/2026','Vera Nuriel',4,4,4,5,4,'dolor espalda baja'],
+['10/06/2026','Alonso Manuel',4,5,5,3,3,'contractura en los trapecios'],
+['11/06/2026','Alonso Manuel',4,4,5,4,4,''],
+['11/06/2026','Pereyra Ian',4,3,4,4,5,''],
+['11/06/2026','Moyano Augusto',4,3,4,5,4,''],
+['11/06/2026','Maciel Santino',5,4,4,5,4,''],
+['11/06/2026','Briozzi Valentino',4,4,5,4,5,''],
+['11/06/2026','Quaini Santiago',3,3,3,3,4,''],
+['11/06/2026','Bianchi Valentin',5,3,4,3,3,'mucho dolor hombro'],
+['11/06/2026','Zalazar Facundo',3,3,4,4,5,''],
+['11/06/2026','Jacuzi Maximiliano',4,3,3,4,3,''],
+['11/06/2026','Betch Tobías',4,3,4,3,4,''],
+['11/06/2026','Demarco Salvador',3,3,3,4,4,''],
+['11/06/2026','Ganino Lazaro',5,5,5,5,5,''],
+['11/06/2026','Vera Nuriel',4,4,3,5,4,'dolor glúteo'],
+['11/06/2026','Mendoza Máximo',3,3,3,5,4,''],
+['12/06/2026','Moyano Augusto',3,4,4,4,4,''],
+['12/06/2026','Pereyra Ian',4,3,4,4,4,''],
+['12/06/2026','Maciel Santino',4,4,5,5,4,''],
+['12/06/2026','Bianchi Valentin',2,3,4,4,4,''],
+['12/06/2026','Quaini Santiago',3,3,3,4,4,''],
+['12/06/2026','Ganino Lazaro',4,5,5,5,5,''],
+['12/06/2026','Jacuzi Maximiliano',4,4,3,3,3,''],
+['12/06/2026','Zalazar Facundo',3,4,4,5,5,''],
+['12/06/2026','Alonso Manuel',4,4,5,3,3,''],
+['12/06/2026','Vera Nuriel',3,4,4,4,4,'dolor de glúteo'],
+['12/06/2026','Mendoza Máximo',4,3,3,3,3,''],
+['12/06/2026','Demarco Salvador',3,3,4,4,4,''],
+['12/06/2026','Briozzi Valentino',4,4,5,5,5,'Un poco trabado de la lumbar'],
+['12/06/2026','Betch Tobías',3,3,4,4,4,''],
+['13/06/2026','Moyano Augusto',4,4,4,5,4,''],
+['13/06/2026','Jacuzi Maximiliano',3,3,3,3,3,''],
+['13/06/2026','Pereyra Ian',4,4,3,4,5,''],
+['13/06/2026','Ganino Lazaro',5,5,5,5,5,''],
+['13/06/2026','Maciel Santino',5,4,5,5,4,''],
+['13/06/2026','Bianchi Valentin',4,4,3,4,3,''],
+['13/06/2026','Vera Nuriel',4,4,4,5,4,'dolor gluteo'],
+['13/06/2026','Briozzi Valentino',5,4,5,5,4,''],
+['13/06/2026','Quaini Santiago',4,4,3,4,5,''],
+['13/06/2026','Zalazar Facundo',3,4,4,5,4,''],
+['13/06/2026','Mendoza Máximo',4,2,2,3,3,''],
+['13/06/2026','Alonso Manuel',5,5,4,4,4,''],
+['13/06/2026','Betch Tobías',5,4,3,4,4,''],
+['13/06/2026','Demarco Salvador',3,3,4,3,3,''],
+['14/06/2026','Moyano Augusto',3,4,5,5,5,''],
+['14/06/2026','Pereyra Ian',4,3,4,4,4,''],
+['14/06/2026','Briozzi Valentino',5,4,5,4,5,''],
+['14/06/2026','Ganino Lazaro',5,4,4,5,5,'dolor en el psoas derecho'],
+['14/06/2026','Zalazar Facundo',5,4,4,5,5,''],
+['14/06/2026','Vera Nuriel',4,3,4,5,4,'cuello'],
+['14/06/2026','Alonso Manuel',5,4,4,4,3,''],
+['14/06/2026','Bianchi Valentin',5,3,3,5,4,''],
+['14/06/2026','Maciel Santino',5,5,5,5,4,''],
+['14/06/2026','Jacuzi Maximiliano',4,4,3,3,3,''],
+['14/06/2026','Quaini Santiago',4,4,3,4,4,''],
+['14/06/2026','Demarco Salvador',4,3,3,5,5,''],
+['14/06/2026','Mendoza Máximo',5,3,3,4,3,''],
+['14/06/2026','Betch Tobías',5,4,3,3,4,''],
+['15/06/2026','Moyano Augusto',4,4,5,4,5,''],
+['15/06/2026','Vera Nuriel',4,4,3,4,4,''],
+['15/06/2026','Bianchi Valentin',4,3,2,4,2,''],
+['15/06/2026','Alonso Manuel',4,4,4,3,2,''],
+['15/06/2026','Quaini Santiago',3,3,3,3,3,''],
+['15/06/2026','Maciel Santino',5,5,4,1,4,''],
+['15/06/2026','Mendoza Máximo',3,3,3,4,3,''],
+['15/06/2026','Ganino Lazaro',4,4,4,5,5,'Dolor en el aductor'],
+['15/06/2026','Zalazar Facundo',3,4,3,4,4,''],
+['15/06/2026','Pereyra Ian',4,4,3,4,4,''],
+['15/06/2026','Briozzi Valentino',3,4,4,4,4,'la lumbar'],
+['15/06/2026','Demarco Salvador',3,3,3,2,2,''],
+['15/06/2026','Jacuzi Maximiliano',4,3,3,3,3,''],
+];
+
+// RPE: [fecha, jugador, rpe, comentario]
+const RPE_RAW = [
+['20/04/2026','Briozzi Valentino',7,''],['20/04/2026','Nazarre Tomas',6,''],
+['20/04/2026','Kuthnik Ciro',4,''],['20/04/2026','Oropel Francisco',6,''],
+['20/04/2026','Bianchi Valentin',7,''],['20/04/2026','Ganino Lazaro',5,''],
+['20/04/2026','Pereyra Ian',4,''],['20/04/2026','Maciel Santino',5,''],
+['20/04/2026','Alonso Bautista',6,''],['20/04/2026','Alonso Manuel',5,''],
+['20/04/2026','Quaini Santiago',5,''],['20/04/2026','Vera Nuriel',5,''],
+['20/04/2026','Mendoza Máximo',7,''],['20/04/2026','Zalazar Facundo',6,''],
+['20/04/2026','Demarco Salvador',6,''],
+['21/04/2026','Zalazar Facundo',7,''],['21/04/2026','Briozzi Valentino',7,''],
+['21/04/2026','Demarco Salvador',6,''],['21/04/2026','Bianchi Valentin',6,''],
+['21/04/2026','Maciel Santino',4,''],['21/04/2026','Mendoza Máximo',7,''],
+['21/04/2026','Vera Nuriel',7,''],['21/04/2026','Pereyra Ian',5,''],
+['21/04/2026','Quaini Santiago',6,''],['21/04/2026','Alonso Bautista',8,''],
+['21/04/2026','Oropel Francisco',5,''],['21/04/2026','Jacuzi Maximiliano',8,''],
+['21/04/2026','Kuthnik Ciro',4,''],['21/04/2026','Ganino Lazaro',4,''],
+['21/04/2026','Nazarre Tomas',3,''],['21/04/2026','Alonso Manuel',6,''],
+['22/04/2026','Kuthnik Ciro',5,''],['22/04/2026','Bianchi Valentin',8,''],
+['22/04/2026','Ganino Lazaro',7,''],['22/04/2026','Alonso Manuel',7,''],
+['22/04/2026','Nazarre Tomas',4,''],['22/04/2026','Pereyra Ian',4,''],
+['22/04/2026','Quaini Santiago',7,''],['22/04/2026','Briozzi Valentino',8,''],
+['22/04/2026','Zalazar Facundo',8,''],['22/04/2026','Mendoza Máximo',7,''],
+['22/04/2026','Demarco Salvador',6,''],['22/04/2026','Maciel Santino',5,''],
+['22/04/2026','Oropel Francisco',6,''],['22/04/2026','Vera Nuriel',8,''],
+['22/04/2026','Jacuzi Maximiliano',7,''],['22/04/2026','Alonso Bautista',8,''],
+['23/04/2026','Maciel Santino',6,''],['23/04/2026','Quaini Santiago',8,''],
+['23/04/2026','Kuthnik Ciro',7,''],['23/04/2026','Bianchi Valentin',8,''],
+['23/04/2026','Alonso Bautista',6,''],['23/04/2026','Briozzi Valentino',9,''],
+['23/04/2026','Ganino Lazaro',6,''],['23/04/2026','Oropel Francisco',5,''],
+['23/04/2026','Pereyra Ian',5,''],['23/04/2026','Nazarre Tomas',8,''],
+['23/04/2026','Jacuzi Maximiliano',6,''],['23/04/2026','Vera Nuriel',8,''],
+['23/04/2026','Zalazar Facundo',6,''],['23/04/2026','Demarco Salvador',7,''],
+['24/04/2026','Briozzi Valentino',8,''],['24/04/2026','Nazarre Tomas',6,''],
+['24/04/2026','Maciel Santino',5,''],['24/04/2026','Kuthnik Ciro',6,''],
+['24/04/2026','Vera Nuriel',8,''],['24/04/2026','Bianchi Valentin',7,''],
+['24/04/2026','Alonso Bautista',6,''],['24/04/2026','Ganino Lazaro',4,''],
+['24/04/2026','Pereyra Ian',6,''],['24/04/2026','Quaini Santiago',4,''],
+['24/04/2026','Oropel Francisco',6,''],['24/04/2026','Jacuzi Maximiliano',7,''],
+['24/04/2026','Alonso Manuel',8,''],['24/04/2026','Zalazar Facundo',7,''],
+['24/04/2026','Mendoza Máximo',2,''],
+['25/04/2026','Maciel Santino',7,''],['25/04/2026','Bianchi Valentin',8,''],
+['25/04/2026','Briozzi Valentino',8,''],['25/04/2026','Alonso Bautista',8,''],
+['25/04/2026','Jacuzi Maximiliano',8,''],['25/04/2026','Alonso Manuel',6,''],
+['25/04/2026','Kuthnik Ciro',6,''],['25/04/2026','Nazarre Tomas',6,''],
+['25/04/2026','Ganino Lazaro',4,''],['25/04/2026','Oropel Francisco',6,''],
+['25/04/2026','Palavecino Nicanor',6,''],['25/04/2026','Vera Nuriel',8,''],
+['25/04/2026','Pereyra Ian',6,''],['25/04/2026','Zalazar Facundo',7,''],
+['25/04/2026','Mendoza Máximo',4,''],['25/04/2026','Demarco Salvador',5,''],
+['26/04/2026','Briozzi Valentino',7,''],['26/04/2026','Pereyra Ian',6,''],
+['26/04/2026','Nazarre Tomas',6,''],['26/04/2026','Ganino Lazaro',4,''],
+['26/04/2026','Oropel Francisco',6,''],['26/04/2026','Bianchi Valentin',7,''],
+['26/04/2026','Demarco Salvador',7,''],['26/04/2026','Kuthnik Ciro',6,''],
+['26/04/2026','Maciel Santino',5,''],['26/04/2026','Zalazar Facundo',9,''],
+['26/04/2026','Alonso Manuel',6,''],['26/04/2026','Alonso Bautista',3,''],
+['26/04/2026','Palavecino Nicanor',6,''],['26/04/2026','Vera Nuriel',6,''],
+['26/04/2026','Mendoza Máximo',7,''],['26/04/2026','Quaini Santiago',8,'dolor en las rodillas'],
+['26/04/2026','Mendoza Máximo',6,''],
+['15/05/2026','Alonso Manuel',3,''],['15/05/2026','Maciel Santino',4,''],
+['15/05/2026','Kuthnik Ciro',6,''],['15/05/2026','Briozzi Valentino',8,''],
+['15/05/2026','Bianchi Valentin',7,''],['15/05/2026','Ganino Lazaro',7,''],
+['15/05/2026','Palavecino Nicanor',7,''],['15/05/2026','Nazarre Tomas',6,''],
+['15/05/2026','Quaini Santiago',7,''],['15/05/2026','Moyano Augusto',7,''],
+['15/05/2026','Vera Nuriel',7,''],['15/05/2026','Zalazar Facundo',7,''],
+['15/05/2026','Demarco Salvador',7,''],['15/05/2026','Pereyra Ian',5,''],
+['15/05/2026','Mendoza Máximo',6,''],
+['16/05/2026','Ganino Lazaro',4,''],['16/05/2026','Briozzi Valentino',7,''],
+['16/05/2026','Palavecino Nicanor',3,''],['16/05/2026','Alonso Manuel',2,''],
+['16/05/2026','Bianchi Valentin',7,''],['16/05/2026','Demarco Salvador',6,''],
+['16/05/2026','Zalazar Facundo',8,'mucho dolor de rodilla'],
+['16/05/2026','Vera Nuriel',7,''],['16/05/2026','Jacuzi Maximiliano',7,''],
+['16/05/2026','Mendoza Máximo',4,''],['16/05/2026','Quaini Santiago',5,''],
+['17/05/2026','Maciel Santino',5,''],['17/05/2026','Ganino Lazaro',7,''],
+['17/05/2026','Bianchi Valentin',8,''],['17/05/2026','Briozzi Valentino',8,''],
+['17/05/2026','Moyano Augusto',8,''],['17/05/2026','Vera Nuriel',7,''],
+['17/05/2026','Pereyra Ian',5,'dolor de espalda'],['17/05/2026','Kuthnik Ciro',6,''],
+['17/05/2026','Palavecino Nicanor',7,''],['17/05/2026','Alonso Manuel',5,''],
+['18/05/2026','Bianchi Valentin',8,''],['18/05/2026','Demarco Salvador',6,''],
+['18/05/2026','Alonso Manuel',5,'dolor en la tibia izquierda'],
+['18/05/2026','Ganino Lazaro',7,''],['18/05/2026','Briozzi Valentino',8,''],
+['18/05/2026','Vera Nuriel',8,''],['18/05/2026','Palavecino Nicanor',7,''],
+['18/05/2026','Quaini Santiago',7,''],['18/05/2026','Pereyra Ian',5,''],
+['18/05/2026','Nazarre Tomas',6,''],['18/05/2026','Moyano Augusto',9,''],
+['08/06/2026','Bianchi Valentin',7,'molestia hombro'],['08/06/2026','Zalazar Facundo',5,''],
+['08/06/2026','Moyano Augusto',3,''],['08/06/2026','Alonso Manuel',4,''],
+['08/06/2026','Vera Nuriel',6,''],['08/06/2026','Demarco Salvador',4,''],
+['09/06/2026','Alonso Manuel',5,''],['09/06/2026','Zalazar Facundo',7,''],
+['09/06/2026','Quaini Santiago',8,'dolor en las rodillas'],
+['09/06/2026','Vera Nuriel',7,''],['09/06/2026','Maciel Santino',8,'Dolor en la parte baja de la espalda'],
+['09/06/2026','Pereyra Ian',5,''],['09/06/2026','Jacuzi Maximiliano',7,''],
+['09/06/2026','Moyano Augusto',8,''],['09/06/2026','Betch Tobías',6,''],
+['09/06/2026','Bianchi Valentin',8,''],['09/06/2026','Mendoza Máximo',6,''],
+['09/06/2026','Demarco Salvador',5,''],
+['10/06/2026','Alonso Manuel',4,''],['10/06/2026','Briozzi Valentino',7,'La espalda baja derecha'],
+['10/06/2026','Bianchi Valentin',8,'Hombro derecho'],
+['10/06/2026','Pereyra Ian',5,'dolor de rodilla'],['10/06/2026','Betch Tobías',5,''],
+['10/06/2026','Zalazar Facundo',7,''],['10/06/2026','Vera Nuriel',7,'glúteo derecho'],
+['10/06/2026','Demarco Salvador',7,''],['10/06/2026','Maciel Santino',7,''],
+['10/06/2026','Moyano Augusto',8,''],['10/06/2026','Mendoza Máximo',7,''],
+['11/06/2026','Moyano Augusto',9,''],['11/06/2026','Maciel Santino',6,''],
+['11/06/2026','Alonso Manuel',7,''],['11/06/2026','Bianchi Valentin',7,'dolor de hombro'],
+['11/06/2026','Ganino Lazaro',5,''],['11/06/2026','Quaini Santiago',7,'dolor de rodillas'],
+['11/06/2026','Briozzi Valentino',7,''],['11/06/2026','Vera Nuriel',7,'dolor de glúteo'],
+['11/06/2026','Pereyra Ian',6,'dolor de espalda'],['11/06/2026','Demarco Salvador',5,''],
+['11/06/2026','Mendoza Máximo',5,''],['11/06/2026','Betch Tobías',5,''],
+['11/06/2026','Zalazar Facundo',7,''],['11/06/2026','Jacuzi Maximiliano',8,''],
+['12/06/2026','Maciel Santino',6,''],['12/06/2026','Vera Nuriel',8,''],
+['12/06/2026','Moyano Augusto',9,''],['12/06/2026','Pereyra Ian',6,''],
+['12/06/2026','Briozzi Valentino',8,''],['12/06/2026','Quaini Santiago',8,'dolor en las rodillas'],
+['12/06/2026','Jacuzi Maximiliano',6,''],['12/06/2026','Zalazar Facundo',8,''],
+['12/06/2026','Bianchi Valentin',8,''],['12/06/2026','Demarco Salvador',7,''],
+['12/06/2026','Alonso Manuel',6,''],
+['13/06/2026','Pereyra Ian',7,''],['13/06/2026','Betch Tobías',4,''],
+['13/06/2026','Alonso Manuel',7,''],['13/06/2026','Zalazar Facundo',8,''],
+['13/06/2026','Briozzi Valentino',7,'molestia en la lumbar'],
+['13/06/2026','Maciel Santino',3,''],['13/06/2026','Ganino Lazaro',8,'dolor en el psoas derecho'],
+['13/06/2026','Quaini Santiago',6,''],['13/06/2026','Jacuzi Maximiliano',7,''],
+['13/06/2026','Moyano Augusto',4,''],['13/06/2026','Bianchi Valentin',8,''],
+['13/06/2026','Demarco Salvador',8,''],['13/06/2026','Mendoza Máximo',8,''],
+['14/06/2026','Moyano Augusto',6,''],['14/06/2026','Zalazar Facundo',8,''],
+['14/06/2026','Mendoza Máximo',5,''],['14/06/2026','Demarco Salvador',6,''],
+['14/06/2026','Vera Nuriel',8,'dolor cuello'],
+['14/06/2026','Maciel Santino',6,''],['14/06/2026','Bianchi Valentin',8,'muy cargadas las piernas, dolor de hombro'],
+['14/06/2026','Pereyra Ian',5,''],['14/06/2026','Alonso Manuel',8,''],
+['14/06/2026','Betch Tobías',6,''],['14/06/2026','Briozzi Valentino',8,'la lumbar baja'],
+['14/06/2026','Ganino Lazaro',8,''],['14/06/2026','Jacuzi Maximiliano',8,''],
+['15/06/2026','Ganino Lazaro',5,''],['15/06/2026','Vera Nuriel',7,''],
+['15/06/2026','Pereyra Ian',3,''],['15/06/2026','Jacuzi Maximiliano',5,''],
+['15/06/2026','Moyano Augusto',5,''],['15/06/2026','Alonso Manuel',7,''],
+['15/06/2026','Maciel Santino',7,''],
+];
+
+// METRICAS: [jugador, mc, pos, carga, ses, media, desv, mono, strain, cronica, acwr, wellness, doms, estim, estado, rec]
+const METRICAS_RAW = [
+['Alonso Bautista',1,'Opuesto',6970,7,996,347,2.87,19982,6970,1,20,4.3,'Técnico + Sint + Global','🟡 Carga Alta','Vigilar recuperación'],
+['Alonso Manuel',1,'Punta',7120,7,1017,265,3.84,27352,7120,1,21.1,3.3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Alonso Manuel',2,'Punta',4200,4,1050,497,2.11,8864,7120,0.59,21.5,4.3,'Técnico + Sint + Global','🟢 Óptimo','Continuar'],
+['Alonso Manuel',3,'Punta',9800,7,1400,324,4.32,42306,5660,1.73,20,4.7,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Bianchi Valentin',1,'Punta',8000,7,1143,261,4.38,35027,8000,1,18.6,3.7,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Bianchi Valentin',2,'Punta',7950,4,1988,555,3.58,28472,8000,0.99,18.5,3.3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Bianchi Valentin',3,'Punta',13200,7,1886,384,4.91,64778,7975,1.66,18.7,3.3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Briozzi Valentino',1,'Punta',8490,7,1213,276,4.4,37375,8490,1,17.4,2.9,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Briozzi Valentino',2,'Punta',8250,4,2063,585,3.53,29108,8490,0.97,21.3,3.5,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Briozzi Valentino',3,'Punta',10660,6,1777,295,6.03,64251,8370,1.27,22.8,4.8,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Demarco Salvador',1,'Libero',7200,7,1029,294,3.5,25176,7200,1,20,3.9,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Demarco Salvador',2,'Libero',6300,4,1575,444,3.55,22363,7200,0.88,21,4.5,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Demarco Salvador',3,'Libero',10160,7,1451,367,3.96,40214,6750,1.51,18.8,3.8,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Ganino Lazaro',1,'Opuesto',5440,7,777,272,2.86,15554,5440,1,21.4,3.7,'Técnico + Sint + Global','🟡 Carga Alta','Vigilar recuperación'],
+['Ganino Lazaro',2,'Opuesto',6900,4,1725,650,2.66,18325,5440,1.27,23,4,'Técnico + Sint + Global','🟡 Carga Alta','Vigilar recuperación'],
+['Ganino Lazaro',3,'Opuesto',6490,5,1298,399,3.25,21117,6170,1.05,24.2,4.8,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Jacuzi Maximiliano',1,'Central',6920,6,1153,315,3.66,25333,6920,1,17.8,3.8,'Técnico + Sint + Global','🟡 Wellness Medio','Reducir volumen 20-30%'],
+['Jacuzi Maximiliano',2,'Central',4950,3,1650,442,3.74,18496,6920,0.72,19.7,4,'Técnico + Sint + Global','🟢 Óptimo','Continuar'],
+['Jacuzi Maximiliano',3,'Central',8630,6,1438,425,3.39,29224,5935,1.45,17.7,3.3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Kuthnik Ciro',1,'Central',5960,7,851,248,3.43,20449,5960,1,20.3,4.3,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Kuthnik Ciro',2,'Central',6450,4,1613,325,4.97,32026,5960,1.08,21.5,3.8,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Maciel Santino',1,'Central',5690,7,813,150,5.4,30752,5690,1,20.7,4.7,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Maciel Santino',2,'Central',3600,3,1200,245,4.9,17636,5690,0.63,22.3,4.7,'Técnico + Sint + Global','🟢 Óptimo','Continuar'],
+['Maciel Santino',3,'Central',9390,6,1565,605,2.59,24287,4645,2.02,22.7,4.5,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Mendoza Máximo',1,'Punta',6640,7,949,422,2.25,14913,6640,1,17.3,2.7,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Mendoza Máximo',2,'Punta',6900,4,1725,683,2.52,17420,6640,1.04,19,3.5,'Técnico + Sint + Global','🟡 Carga Alta','Vigilar recuperación'],
+['Mendoza Máximo',3,'Punta',7660,6,1277,411,3.1,23771,6770,1.13,18,3.2,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Nazarre Tomas',1,'Central',6020,7,860,276,3.12,18766,6020,1,20.3,4.9,'Técnico + Sint + Global','🟡 Carga Alta','Vigilar recuperación'],
+['Nazarre Tomas',2,'Central',6150,4,1538,455,3.38,20797,6020,1.02,21,4.3,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Oropel Francisco',1,'Armador',6300,7,900,217,4.15,26130,6300,1,20.3,4,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Pereyra Ian',1,'Punta',5660,7,809,234,3.46,19563,5660,1,16.9,3.1,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Pereyra Ian',2,'Punta',5700,4,1425,130,10.97,62527,5660,1.01,17.3,3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Pereyra Ian',3,'Punta',8360,6,1393,202,6.9,57675,5680,1.47,19.5,3.7,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Quaini Santiago',1,'Armador',7000,7,1000,444,2.25,15775,7000,1,16.3,3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Quaini Santiago',2,'Armador',7050,4,1763,585,3.02,21256,7000,1.01,16.8,2.8,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Quaini Santiago',3,'Armador',7310,6,1218,645,1.89,13803,7025,1.04,17.7,3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Vera Nuriel',1,'Armador',7840,7,1120,285,3.93,30804,7840,1,19.7,3.7,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Vera Nuriel',2,'Armador',7650,4,1913,513,3.73,28531,7840,0.98,22.3,4.5,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Vera Nuriel',3,'Armador',11030,7,1576,366,4.3,47451,7745,1.42,20.3,3.8,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Palavecino Nicanor',1,'Armador',1800,2,900,360,2.5,4500,1800,1,22,4.5,'Sintético + Global','🟢 Óptimo','Continuar'],
+['Palavecino Nicanor',2,'Armador',6750,4,1688,714,2.36,15943,1800,3.75,19.5,3.3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Zalazar Facundo',1,'Punta',8070,7,1153,406,2.84,22910,8070,1,18.4,3.7,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Zalazar Facundo',2,'Punta',5100,3,1700,374,4.54,23172,8070,0.63,20.7,3,'Técnico + Sint + Global','🟡 DOMS Moderado','Monitorear tendinitis rotuliana'],
+['Zalazar Facundo',3,'Punta',12180,7,1740,373,4.67,56833,6585,1.85,21,4,'Técnico + Sint + Global','🔴 Strain Extremo','Semana de descarga obligatoria'],
+['Moyano Augusto',2,'Punta',8100,4,2025,683,2.96,24005,8100,1,22.5,4.5,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Moyano Augusto',3,'Punta',12050,7,1721,774,2.22,26808,8100,1.49,20.8,4.2,'Técnico + Sint + Global','🟡 Strain Alto','Reducir carga próxima semana'],
+['Betch Tobias',3,'Punta',1800,1,1800,0,0,0,1800,1,22,5,'Técnico + Sint + Global','🟢 Óptimo','Continuar'],
+];
+
+// GRUPAL: [mc, jugadores, carga_prom, mono_prom, strain_prom, acwr_prom, wel_prom]
+const GRUPAL_RAW = [
+[1,17,6536,3.46,22962,1,19.3],
+[2,16,6375,3.91,24309,1.1,20.5],
+[3,14,9194,3.68,36608,1.44,20.3],
+];
+
+// ESTIMULOS: [comb, ses, carga_media, wellness_post, doms, impacto]
+const ESTIMULOS_RAW = [
+['Sint + Global + Control Motor',15,784,20.3,4.1,1516],
+['Técnico + Sint + Global + Fza estructural',76,1599,19.8,4,3260],
+['Técnico + Sint + Global + Potencia',16,1181,18.5,3.8,2717],
+['Técnico + Sint + Global + Descarga activa',30,1400,19.4,3.7,2969],
+['Técnico + Partido + Sin trabajo físico',30,938,19.7,3.6,1931],
+['Sint + Global + Sin trabajo físico',17,566,19.1,3.5,1240],
+['Partido + Sin trabajo físico',16,863,19.9,4.1,1747],
+['Técnico + Sint + Global + Sin trabajo físico',36,1836,20.1,3.4,3653],
+['Técnico + Partido + Potencia',14,1950,19.2,3.8,4206],
+['Sint + Global + Descarga activa',14,1454,17.7,3.8,3579],
+];
+
+// POSICIONES: [pos, reg, carga, mono, strain, wellness, doms]
+const POSICIONES_RAW = [
+['Opuesto',4,6450,2.91,18745,22.2,4.2],
+['Punta',21,7900,3.98,32720,19.7,3.7],
+['Libero',3,7887,3.67,29251,19.9,4.1],
+['Central',10,6376,3.86,23777,20.4,4.2],
+['Armador',9,6970,3.13,22688,19.4,3.6],
+];
+
+/* ===== UTILITIES ===== */
+
+function parseFecha(str) {
+  const parts = str.split('/');
+  if (parts.length === 3) return new Date(+parts[2], +parts[1]-1, +parts[0]);
+  return new Date(str);
+}
+
+function fmtNum(n, dec=1) {
+  if (n==null||isNaN(n)) return '—';
+  return Number(n).toFixed(dec);
+}
+
+function fmtInt(n) {
+  if (n==null||isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('es-AR');
+}
+
+function colorCarga(v) {
+  if (v < 5000) return 'green';
+  if (v <= 7000) return 'yellow';
+  return 'red';
+}
+function colorMono(v) {
+  if (v < 5) return 'green';
+  if (v <= 8) return 'yellow';
+  return 'red';
+}
+function colorStrain(v) {
+  if (v < 20000) return 'green';
+  if (v <= 35000) return 'yellow';
+  return 'red';
+}
+function colorACWR(v) {
+  if (v >= 0.8 && v <= 1.3) return 'green';
+  if (v > 1.3 && v <= 1.5) return 'yellow';
+  return 'red';
+}
+function colorWellness(v) {
+  if (v > 18) return 'green';
+  if (v >= 15) return 'yellow';
+  return 'red';
+}
+function colorDOMS(v) {
+  if (v > 3.5) return 'green';
+  if (v >= 2.5) return 'yellow';
+  return 'red';
+}
+function colorDesv(v) {
+  if (v > 300) return 'green';
+  if (v >= 150) return 'yellow';
+  return 'red';
+}
+
+function pill(color, text) {
+  return `<span class="pill pill-${color}"><span class="dot dot-${color}"></span>${text}</span>`;
+}
+
+function badge(estado) {
+  let c = 'yellow';
+  if (estado.includes('🟢')) c = 'green';
+  else if (estado.includes('🔴')) c = 'red';
+  const clean = estado.replace(/🟢|🟡|🔴/g,'').trim();
+  return `<span class="badge badge-${c}">${clean}</span>`;
+}
+
+function pillNum(v, colorFn, fmt='int') {
+  const c = colorFn(v);
+  const txt = fmt==='int' ? fmtInt(v) : fmtNum(v, fmt==='int2'?0:2);
+  return pill(c, txt);
+}
+
+const charts = {};
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function makeChart(id, config) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, config);
+}
+
+function uniqueSorted(arr, fn) {
+  return [...new Set(arr.map(fn))].sort();
+}
+
+/* ===== TAB: DASHBOARD GRUPAL ===== */
+function renderGrupal() {
+  const el = document.getElementById('tab-grupal');
+
+  const mc3 = GRUPAL_RAW[2];
+  const totalJugadores = JUGADORES.length;
+  const alertas = METRICAS_RAW.filter(r => r[14].includes('🔴')).length;
+  const totalSesiones = METRICAS_RAW.reduce((a,r)=>a+r[4],0);
+
+  el.innerHTML = `
+    <div class="cards-row">
+      <div class="card">
+        <div class="card-label">Microciclo Actual</div>
+        <div class="card-value">3</div>
+        <div class="card-sub">Jun 9–15, 2026</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Jugadores Activos</div>
+        <div class="card-value">${mc3[1]}</div>
+        <div class="card-sub">de ${totalJugadores} en plantilla</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Carga Prom. (MC3)</div>
+        <div class="card-value" style="color:${mc3[2]>7000?'var(--red)':mc3[2]>5000?'var(--yellow)':'var(--green)'}">
+          ${fmtInt(mc3[2])}
+        </div>
+        <div class="card-sub">Unidades Arbitrarias</div>
+      </div>
+      <div class="card">
+        <div class="card-label">ACWR Prom. (MC3)</div>
+        <div class="card-value" style="color:${mc3[5]>1.3?'var(--red)':'var(--green)'}">
+          ${fmtNum(mc3[5],2)}
+        </div>
+        <div class="card-sub">Óptimo: 0.8–1.3</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Alertas Rojas</div>
+        <div class="card-value" style="color:var(--red)">${alertas}</div>
+        <div class="card-sub">jugadores en riesgo</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Wellness Prom. (MC3)</div>
+        <div class="card-value" style="color:${mc3[6]>18?'var(--green)':'var(--yellow)'}">
+          ${fmtNum(mc3[6],1)}
+        </div>
+        <div class="card-sub">Escala /25 · Óptimo >18</div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-wrap">
+        <div class="chart-title">Carga Semanal Promedio por Microciclo</div>
+        <canvas id="c-carga" height="180"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Strain Promedio por Microciclo</div>
+        <canvas id="c-strain" height="180"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-wrap">
+        <div class="chart-title">ACWR Promedio por Microciclo</div>
+        <canvas id="c-acwr" height="180"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Wellness Promedio por Microciclo</div>
+        <canvas id="c-wellness-g" height="180"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title mb16">Resumen por Microciclo</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Microciclo</th><th>Jugadores</th>
+            <th>Carga Prom</th><th>Monotonía Prom</th><th>Strain Prom</th>
+            <th>ACWR Prom</th><th>Wellness Prom</th>
+            <th>Fatiga</th><th>Sueño</th><th>DOMS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${GRUPAL_RAW.map(r=>`<tr>
+            <td><strong>MC ${r[0]}</strong></td>
+            <td>${r[1]}</td>
+            <td>${pill(colorCarga(r[2]), fmtInt(r[2]))}</td>
+            <td>${pill(colorMono(r[3]), fmtNum(r[3],2))}</td>
+            <td>${pill(colorStrain(r[4]), fmtInt(r[4]))}</td>
+            <td>${pill(colorACWR(r[5]), fmtNum(r[5],2))}</td>
+            <td>${pill(colorWellness(r[6]), fmtNum(r[6],1))}</td>
+            <td>${pill('green','🟢')}</td>
+            <td>${pill('green','🟢')}</td>
+            <td>${pill('green','🟢')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const labels = ['MC 1\nAbr 20-26','MC 2\nMay 15-18','MC 3\nJun 9-15'];
+  const mc = GRUPAL_RAW;
+  const chartDefaults = {
+    borderRadius:6,
+    plugins:{legend:{display:false},tooltip:{callbacks:{}}},
+    scales:{
+      x:{ticks:{color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}},
+      y:{ticks:{color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}}
+    }
+  };
+
+  makeChart('c-carga',{type:'bar',data:{
+    labels,
+    datasets:[{data:mc.map(r=>r[2]),backgroundColor:mc.map(r=>r[2]>7000?'rgba(239,68,68,.7)':r[2]>5000?'rgba(245,158,11,.7)':'rgba(34,197,94,.7)'),borderColor:'transparent'}]
+  },options:{...chartDefaults,plugins:{...chartDefaults.plugins,annotation:{}}}});
+
+  makeChart('c-strain',{type:'bar',data:{
+    labels,
+    datasets:[{data:mc.map(r=>r[4]),backgroundColor:mc.map(r=>r[4]>35000?'rgba(239,68,68,.7)':r[4]>20000?'rgba(245,158,11,.7)':'rgba(34,197,94,.7)'),borderColor:'transparent'}]
+  },options:chartDefaults});
+
+  makeChart('c-acwr',{type:'line',data:{
+    labels,
+    datasets:[
+      {data:mc.map(r=>r[5]),borderColor:'#74acdf',backgroundColor:'rgba(116,172,223,.15)',tension:.3,fill:true,pointBackgroundColor:'#74acdf',pointRadius:5},
+      {data:[0.8,0.8,0.8],borderColor:'rgba(34,197,94,.4)',borderDash:[5,5],pointRadius:0,label:'Mín'},
+      {data:[1.3,1.3,1.3],borderColor:'rgba(245,158,11,.4)',borderDash:[5,5],pointRadius:0,label:'Máx'}
+    ]
+  },options:{...chartDefaults,plugins:{legend:{display:false}}}});
+
+  makeChart('c-wellness-g',{type:'line',data:{
+    labels,
+    datasets:[{data:mc.map(r=>r[6]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.15)',tension:.3,fill:true,pointBackgroundColor:'#22c55e',pointRadius:5}]
+  },options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,min:15,max:25}}}});
+}
+
+/* ===== TAB: MÉTRICAS INDIVIDUALES ===== */
+function renderMetricas() {
+  const el = document.getElementById('tab-metricas');
+  const jugadores = uniqueSorted(METRICAS_RAW, r=>r[0]);
+
+  el.innerHTML = `
+    <div class="filters">
+      <span class="filter-label">Jugador:</span>
+      <select id="f-jug-m">
+        <option value="">Todos</option>
+        ${jugadores.map(j=>`<option value="${j}">${j}</option>`).join('')}
+      </select>
+      <span class="filter-label">Microciclo:</span>
+      <select id="f-mc-m">
+        <option value="">Todos</option>
+        <option value="1">MC 1 (Abril)</option>
+        <option value="2">MC 2 (Mayo)</option>
+        <option value="3">MC 3 (Junio)</option>
+      </select>
+    </div>
+    <div id="m-content"></div>
+    <input type="file" id="photo-input" accept="image/*" style="display:none">
+  `;
+
+  /* ---- helpers ---- */
+  const MC_LABELS = {1:'MC 1 · Abr 20-26', 2:'MC 2 · May 15-18', 3:'MC 3 · Jun 9-15'};
+  const estadoColor = s => s.includes('🔴')?'r':s.includes('🟡')?'y':'g';
+  const initials = name => name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+  function getPhoto(jug) {
+    return localStorage.getItem('player_photo_'+jug) || null;
+  }
+  function savePhoto(jug, dataUrl) {
+    localStorage.setItem('player_photo_'+jug, dataUrl);
+  }
+
+  function kpi(label, value, colorFn, sub='') {
+    const c = colorFn(value);
+    const colors = {g:'#22c55e', y:'#f59e0b', r:'#ef4444'};
+    const cl = colors[c] || '#e8f0fa';
+    return `<div class="player-kpi">
+      <div class="player-kpi-label">${label}</div>
+      <div class="player-kpi-val" style="color:${cl}">${value}</div>
+      ${sub?`<div class="player-kpi-sub" style="color:${cl}">${sub}</div>`:''}
+    </div>`;
+  }
+
+  /* ---- VISTA TABLA (todos) ---- */
+  function renderTable(jFil, mFil) {
+    const data = METRICAS_RAW.filter(r=>
+      (!jFil || r[0]===jFil) && (!mFil || r[1]==+mFil)
+    );
+    document.getElementById('m-content').innerHTML = `
+      <div class="tbl-wrap">
+        <table id="tbl-metricas">
+          <thead><tr>
+            <th>Jugador</th><th>MC</th><th>Pos</th>
+            <th>Carga Sem.</th><th>Ses.</th><th>Media</th>
+            <th>Desv.</th><th>Monotonía</th><th>Strain</th>
+            <th>Crónica</th><th>ACWR</th>
+            <th>Wellness</th><th>DOMS</th>
+            <th>Estado</th><th>Recomendación</th>
+          </tr></thead>
+          <tbody>${data.map(r=>`<tr>
+            <td><strong style="cursor:pointer;color:var(--blue)" onclick="selectPlayer('${r[0]}')">${r[0]}</strong></td>
+            <td>MC ${r[1]}</td><td>${r[2]}</td>
+            <td>${pill(colorCarga(r[3]), fmtInt(r[3]))}</td>
+            <td>${r[4]}</td><td>${fmtInt(r[5])}</td>
+            <td>${pill(colorDesv(r[6]), fmtInt(r[6]))}</td>
+            <td>${pill(colorMono(r[7]), fmtNum(r[7],2))}</td>
+            <td>${pill(colorStrain(r[8]), fmtInt(r[8]))}</td>
+            <td>${fmtInt(r[9])}</td>
+            <td>${pill(colorACWR(r[10]), fmtNum(r[10],2))}</td>
+            <td>${pill(colorWellness(r[11]), fmtNum(r[11],1))}</td>
+            <td>${pill(colorDOMS(r[12]), fmtNum(r[12],1))}</td>
+            <td>${badge(r[14])}</td>
+            <td class="text-muted" style="font-size:11px">${r[15]}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ---- VISTA PERFIL (1 jugador) ---- */
+  function renderProfile(jug, mcFil) {
+    const allRows = METRICAS_RAW.filter(r=>r[0]===jug);
+    if (!allRows.length) { document.getElementById('m-content').innerHTML=`<p style="color:var(--muted);padding:24px">Sin datos para este jugador.</p>`; return; }
+
+    const rows  = mcFil ? allRows.filter(r=>r[1]==+mcFil) : allRows;
+    const latest = rows[rows.length-1] || allRows[allRows.length-1];
+    const pos   = latest[2] || '—';
+    const photo = getPhoto(jug);
+    const col   = estadoColor(latest[14]||'');
+    const bannerCls = `estado-banner estado-banner-${col}`;
+    const bannerClr = col==='r'?'#ef4444':col==='y'?'#f59e0b':'#22c55e';
+
+    // Wellness promedio del jugador (desde WELLNESS_RAW)
+    const wRows = WELLNESS_RAW.filter(r=>r[1]===jug);
+    const wAvg  = wRows.length ? (wRows.reduce((s,r)=>s+r[2]+r[3]+r[4]+r[5]+r[6],0)/wRows.length*5/25*5).toFixed(1) : '—';
+
+    document.getElementById('m-content').innerHTML = `
+      <div class="player-profile">
+        <!-- COLUMNA FOTO -->
+        <div class="player-avatar-col">
+          <div class="player-avatar-ring" id="avatar-ring">
+            <div class="player-avatar-img" id="avatar-img">
+              ${photo
+                ? `<img src="${photo}" alt="${jug}">`
+                : `<span>${initials(jug)}</span>`}
+            </div>
+            <div class="player-avatar-overlay" id="avatar-overlay">
+              <span style="font-size:20px">📷</span>
+              <span>Subir foto</span>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:var(--muted)">Hacé clic en la foto para cambiarla</div>
+          </div>
+        </div>
+
+        <!-- COLUMNA METRICAS -->
+        <div>
+          <div class="player-name-big">${jug}</div>
+          <span class="player-pos-tag">${pos}</span>
+
+          ${latest ? `
+          <!-- Estado -->
+          <div class="${bannerCls}">
+            <div>
+              <div class="estado-banner-label" style="color:${bannerClr}">${latest[14]||'Sin datos'}</div>
+              <div class="estado-banner-rec">${latest[15]||''}</div>
+            </div>
+          </div>
+
+          <!-- KPIs del microciclo más reciente -->
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;font-weight:700">
+            ${mcFil ? MC_LABELS[mcFil] : MC_LABELS[latest[1]]} — Métricas clave
+          </div>
+          <div class="player-kpi-grid">
+            ${kpi('Carga Semanal', fmtInt(latest[3])+' UA', colorCarga, latest[3]>7000?'Alta':latest[3]>5000?'Media':'Baja')}
+            ${kpi('ACWR', fmtNum(latest[10],2), colorACWR, latest[10]>1.5?'⚠ Riesgo':latest[10]>=0.8?'✓ Óptimo':'↓ Bajo')}
+            ${kpi('Strain', fmtInt(latest[8]), colorStrain, latest[8]>35000?'Extremo':latest[8]>20000?'Alto':'Controlado')}
+            ${kpi('Monotonía', fmtNum(latest[7],2), colorMono, latest[7]>8?'Alta':latest[7]>5?'Media':'Baja')}
+            ${kpi('Wellness', fmtNum(latest[11],1)+'/25', colorWellness, latest[11]>18?'Óptimo':latest[11]>=15?'Moderado':'Bajo')}
+            ${kpi('DOMS', fmtNum(latest[12],1)+'/5', colorDOMS, latest[12]>3.5?'Sin dolor':latest[12]>=2.5?'Moderado':'Dolor')}
+          </div>` : ''}
+
+          <!-- Historial por microciclo -->
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;font-weight:700;margin-top:8px">Evolución por microciclo</div>
+          <div class="mc-history">
+            ${allRows.map(r=>`
+              <div class="mc-hist-card ${r[1]===latest[1]?'active-mc':''}">
+                <div class="mc-hist-title" style="${r[1]===latest[1]?'color:var(--blue)':''}">${MC_LABELS[r[1]]||'MC '+r[1]}</div>
+                <div class="mc-hist-row"><span class="mc-hist-key">Carga</span><span class="mc-hist-val" style="color:${['','#22c55e','#f59e0b','#ef4444'][colorCarga(r[3])==='g'?1:colorCarga(r[3])==='y'?2:3]}">${fmtInt(r[3])} UA</span></div>
+                <div class="mc-hist-row"><span class="mc-hist-key">ACWR</span><span class="mc-hist-val" style="color:${colorACWR(r[10])==='g'?'#22c55e':colorACWR(r[10])==='y'?'#f59e0b':'#ef4444'}">${fmtNum(r[10],2)}</span></div>
+                <div class="mc-hist-row"><span class="mc-hist-key">Strain</span><span class="mc-hist-val" style="color:${colorStrain(r[8])==='g'?'#22c55e':colorStrain(r[8])==='y'?'#f59e0b':'#ef4444'}">${fmtInt(r[8])}</span></div>
+                <div class="mc-hist-row"><span class="mc-hist-key">Wellness</span><span class="mc-hist-val" style="color:${colorWellness(r[11])==='g'?'#22c55e':colorWellness(r[11])==='y'?'#f59e0b':'#ef4444'}">${fmtNum(r[11],1)}</span></div>
+                <div class="mc-hist-row" style="border:none"><span class="mc-hist-key">Estado</span><span class="mc-hist-val" style="font-size:10px">${(r[14]||'').replace(/🟢|🟡|🔴/,'').trim()}</span></div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Foto upload
+    const ring = document.getElementById('avatar-ring');
+    const inp  = document.getElementById('photo-input');
+    ring.addEventListener('click', ()=>inp.click());
+    inp.addEventListener('change', e=>{
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        savePhoto(jug, ev.target.result);
+        document.getElementById('avatar-img').innerHTML = `<img src="${ev.target.result}" alt="${jug}">`;
+      };
+      reader.readAsDataURL(file);
+      inp.value='';
+    });
+  }
+
+  /* ---- lógica principal ---- */
+  function update() {
+    const jug = document.getElementById('f-jug-m').value;
+    const mc  = document.getElementById('f-mc-m').value;
+    if (jug) renderProfile(jug, mc);
+    else     renderTable('', mc);
+  }
+
+  // Permite hacer clic en el nombre en la tabla para ir al perfil
+  window.selectPlayer = function(jug) {
+    document.getElementById('f-jug-m').value = jug;
+    update();
+  };
+
+  update();
+  document.getElementById('f-jug-m').addEventListener('change', update);
+  document.getElementById('f-mc-m').addEventListener('change', update);
+}
+
+/* ===== TAB: ESTÍMULOS ===== */
+function renderEstimulos() {
+  const el = document.getElementById('tab-estimulos');
+  el.innerHTML = `
+    <div class="chart-row">
+      <div class="chart-wrap" style="grid-column:1/-1">
+        <div class="chart-title">Impacto Estimado por Tipo de Estímulo</div>
+        <canvas id="c-est" height="160"></canvas>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Combinación Táctico + Físico</th><th>Sesiones</th>
+            <th>Carga Media (UA)</th><th>Wellness 24h Post</th>
+            <th>DOMS Medio</th><th>Impacto Estimado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ESTIMULOS_RAW.map(r=>`<tr>
+            <td><strong>${r[0]}</strong></td>
+            <td>${r[1]}</td>
+            <td>${fmtInt(r[2])}</td>
+            <td>${pill(colorWellness(r[3]), fmtNum(r[3],1))}</td>
+            <td>${pill(colorDOMS(r[4]), fmtNum(r[4],1))}</td>
+            <td><strong>${fmtInt(r[5])}</strong></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const sorted = [...ESTIMULOS_RAW].sort((a,b)=>b[5]-a[5]);
+  makeChart('c-est',{
+    type:'bar',
+    data:{
+      labels: sorted.map(r=>r[0].replace(' + Sin trabajo físico','').replace('Técnico + Sint + Global + ','')),
+      datasets:[{
+        data: sorted.map(r=>r[5]),
+        backgroundColor: sorted.map(r=>r[5]>3500?'rgba(239,68,68,.75)':r[5]>2500?'rgba(245,158,11,.75)':'rgba(116,172,223,.75)'),
+        borderRadius:6,
+        borderColor:'transparent'
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}},
+        y:{ticks:{color:'#e8f0fa',font:{size:11}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+/* ===== TAB: POSICIONES ===== */
+function renderPosiciones() {
+  const el = document.getElementById('tab-posiciones');
+  el.innerHTML = `
+    <div class="chart-row">
+      <div class="chart-wrap">
+        <div class="chart-title">Carga Promedio por Posición</div>
+        <canvas id="c-pos-carga" height="200"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Wellness y DOMS por Posición</div>
+        <canvas id="c-pos-wel" height="200"></canvas>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Posición</th><th>Registros</th><th>Carga Prom.</th>
+            <th>Monotonía</th><th>Strain</th><th>Wellness</th><th>DOMS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${POSICIONES_RAW.map(r=>`<tr>
+            <td><strong>${r[0]}</strong></td>
+            <td>${r[1]}</td>
+            <td>${pill(colorCarga(r[2]), fmtInt(r[2]))}</td>
+            <td>${pill(colorMono(r[3]), fmtNum(r[3],2))}</td>
+            <td>${pill(colorStrain(r[4]), fmtInt(r[4]))}</td>
+            <td>${pill(colorWellness(r[5]), fmtNum(r[5],1))}</td>
+            <td>${pill(colorDOMS(r[6]), fmtNum(r[6],1))}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const labels = POSICIONES_RAW.map(r=>r[0]);
+  const colors = ['rgba(116,172,223,.8)','rgba(245,158,11,.8)','rgba(239,68,68,.8)','rgba(34,197,94,.8)','rgba(168,85,247,.8)'];
+  const chartOpts = {
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:'#e8f0fa'},grid:{display:false}},
+      y:{ticks:{color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}}
+    }
+  };
+
+  makeChart('c-pos-carga',{type:'bar',data:{
+    labels,
+    datasets:[{data:POSICIONES_RAW.map(r=>r[2]),backgroundColor:colors,borderRadius:6,borderColor:'transparent'}]
+  },options:chartOpts});
+
+  makeChart('c-pos-wel',{type:'bar',data:{
+    labels,
+    datasets:[
+      {label:'Wellness',data:POSICIONES_RAW.map(r=>r[5]),backgroundColor:'rgba(34,197,94,.7)',borderRadius:4},
+      {label:'DOMS',data:POSICIONES_RAW.map(r=>r[6]*5),backgroundColor:'rgba(116,172,223,.7)',borderRadius:4}
+    ]
+  },options:{...chartOpts,plugins:{legend:{display:true,labels:{color:'#e8f0fa',font:{size:11}}}}}});
+}
+
+/* ===== TAB: WELLNESS ===== */
+function renderWellness() {
+  const el = document.getElementById('tab-wellness');
+
+  // Obtener fechas únicas ordenadas descendente
+  const allDates = [...new Set(WELLNESS_RAW.map(r=>r[0]))]
+    .sort((a,b)=>parseFecha(b)-parseFecha(a));
+  const latestDate = allDates[0] || '';
+  const jugadores  = uniqueSorted(WELLNESS_RAW, r=>r[1]);
+
+  el.innerHTML = `
+    <div class="player-select-row" style="gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-mode-equipo">📊 Equipo</button>
+        <button class="mode-btn" id="btn-mode-ind">👤 Individual</button>
+      </div>
+      <div id="ctrl-equipo" style="display:flex;align-items:center;gap:10px">
+        <span class="filter-label">Fecha:</span>
+        <select id="sel-fecha-w" style="min-width:150px">
+          ${allDates.map(d=>`<option value="${d}">${d}</option>`).join('')}
+        </select>
+        <span class="response-badge" id="w-response-badge">—</span>
+      </div>
+      <div id="ctrl-individual" style="display:none;align-items:center;gap:10px">
+        <span class="filter-label">Jugador:</span>
+        <select id="sel-jug-w" style="min-width:200px">
+          ${jugadores.map(j=>`<option value="${j}">${j}</option>`).join('')}
+        </select>
+        <span class="filter-label">Microciclo:</span>
+        <select id="sel-mc-w">
+          <option value="">Todos</option>
+          <option value="1">MC 1 (Abril)</option>
+          <option value="2">MC 2 (Mayo)</option>
+          <option value="3">MC 3 (Junio)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- VISTA EQUIPO -->
+    <div id="view-w-equipo">
+      <div id="w-alerts"></div>
+      <div class="card mb16">
+        <div class="chart-title">🔥 Estado del Equipo — Wellness Matutino</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          Heatmap de todos los jugadores. <span style="color:#22c55e">■ 4–5 Óptimo</span> &nbsp;
+          <span style="color:#f59e0b">■ 3 Moderado</span> &nbsp;
+          <span style="color:#ef4444">■ 1–2 Crítico</span>
+        </p>
+        <div style="overflow-x:auto"><div id="w-heatmap"></div></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">📊 Distribución de Respuestas por Pregunta</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px">¿Qué contestó cada jugador en cada dimensión?</p>
+        <div class="dist-grid" id="w-dist"></div>
+      </div>
+    </div>
+
+    <!-- VISTA INDIVIDUAL -->
+    <div id="view-w-ind" style="display:none">
+      <div class="chart-wrap">
+        <div class="chart-title" id="w-chart-title">Evolución Wellness</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:#74acdf"></div>Sueño</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Cansancio</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Dolor</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Estrés</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Energía</div>
+        </div>
+        <canvas id="c-wellness-ind" height="200"></canvas>
+      </div>
+      <div class="chart-wrap mt16">
+        <div class="chart-title">Wellness Total /25</div>
+        <canvas id="c-wellness-total" height="140"></canvas>
+      </div>
+      <div id="wellness-comments" class="comments-list mt16"></div>
+    </div>
+  `;
+
+  /* ---- HELPERS ---- */
+  const cellBg  = v => v>=4?'rgba(34,197,94,.22)' : v===3?'rgba(245,158,11,.22)':'rgba(239,68,68,.32)';
+  const cellClr = v => v>=4?'#22c55e' : v===3?'#f59e0b':'#ef4444';
+  const DIMS    = ['Sueño','Cansancio','Dolor','Estrés','Ánimo'];
+  const DIDX    = [2,3,4,5,6];
+
+  /* ---- VISTA EQUIPO ---- */
+  function renderEquipo(fecha) {
+    const rows = WELLNESS_RAW.filter(r=>r[0]===fecha);
+    const total_jug = JUGADORES.length || 19;
+    document.getElementById('w-response-badge').innerHTML =
+      `<strong>${rows.length}</strong>/${total_jug} respondieron`;
+
+    // Alertas automáticas
+    const rojos=[], amarillos=[];
+    rows.forEach(r=>{
+      DIMS.forEach((d,i)=>{
+        const v=r[DIDX[i]];
+        if(v<=2) rojos.push(`${r[1]} → ${d} (${v})`);
+        else if(v===3) amarillos.push(`${r[1]} → ${d} (${v})`);
+      });
+    });
+    let alertHtml='';
+    if(rojos.length) alertHtml+=`
+      <div class="alert-box alert-box-red">
+        <div class="alert-box-title">🔴 Prestar atención — valores críticos</div>
+        <div class="alert-tags">${rojos.map(t=>`<span class="alert-tag-red">${t}</span>`).join('')}</div>
+      </div>`;
+    if(amarillos.length) alertHtml+=`
+      <div class="alert-box alert-box-yellow">
+        <div class="alert-box-title">🟡 Monitorear — valores moderados</div>
+        <div class="alert-tags">${amarillos.map(t=>`<span class="alert-tag-yellow">${t}</span>`).join('')}</div>
+      </div>`;
+    if(!alertHtml) alertHtml=`<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:12px 18px;margin-bottom:10px;color:#22c55e;font-weight:700;font-size:13px">✅ Todos los jugadores con valores aceptables hoy</div>`;
+    document.getElementById('w-alerts').innerHTML = alertHtml;
+
+    // Heatmap table — ordenado de peor a mejor Wellness Total
+    const sorted = [...rows].sort((a,b)=>{
+      const tA=DIDX.reduce((s,i)=>s+a[i],0);
+      const tB=DIDX.reduce((s,i)=>s+b[i],0);
+      return tA-tB;
+    });
+    const totalBg = t => t>18?'rgba(34,197,94,.2)':t>=15?'rgba(245,158,11,.2)':'rgba(239,68,68,.3)';
+    const totalCl = t => t>18?'#22c55e':t>=15?'#f59e0b':'#ef4444';
+
+    document.getElementById('w-heatmap').innerHTML = rows.length===0
+      ? `<p style="color:var(--muted);padding:16px">Sin respuestas para esta fecha.</p>`
+      : `<table class="doc-table" style="min-width:640px">
+          <thead><tr>
+            <th>JUGADOR</th>
+            ${DIMS.map(d=>`<th style="text-align:center">${d.toUpperCase()}</th>`).join('')}
+            <th style="text-align:center">TOTAL /25</th>
+            <th>COMENTARIO</th>
+          </tr></thead>
+          <tbody>${sorted.map(r=>{
+            const vals=DIDX.map(i=>r[i]);
+            const tot=vals.reduce((a,b)=>a+b,0);
+            return `<tr>
+              <td style="font-weight:700;color:var(--white);white-space:nowrap">${r[1]}</td>
+              ${vals.map(v=>`<td class="heatmap-cell" style="background:${cellBg(v)};color:${cellClr(v)}">${v}</td>`).join('')}
+              <td class="heatmap-cell" style="background:${totalBg(tot)};color:${totalCl(tot)};font-size:18px">${tot}</td>
+              <td style="color:var(--muted);font-size:12px;max-width:200px">${r[7]||'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+
+    // Distribución
+    let distHtml='';
+    DIMS.forEach((dim,di)=>{
+      const idx=DIDX[di];
+      const grp={5:[],4:[],3:[],2:[],1:[]};
+      rows.forEach(r=>{ const v=r[idx]; if(grp[v]) grp[v].push(r[1].split(' ')[0]); });
+      distHtml+=`<div class="dist-card">
+        <div class="dist-dim-title">${dim}</div>
+        ${[5,4,3,2,1].map(v=>{
+          if(!grp[v].length) return '';
+          return `<div class="dist-row" style="background:${cellBg(v)}">
+            <span class="dist-val" style="color:${cellClr(v)}">${v}</span>
+            <span class="dist-names">${grp[v].join(', ')}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    });
+    document.getElementById('w-dist').innerHTML = distHtml;
+  }
+
+  /* ---- VISTA INDIVIDUAL ---- */
+  function renderIndividual() {
+    const jug = document.getElementById('sel-jug-w').value;
+    const mc  = document.getElementById('sel-mc-w').value;
+    document.getElementById('w-chart-title').textContent = `Evolución Wellness — ${jug}`;
+    const MC_DATE_RANGES={'1':['20/04/2026','26/04/2026'],'2':['15/05/2026','18/05/2026'],'3':['08/06/2026','15/06/2026']};
+    let data=WELLNESS_RAW.filter(r=>r[1]===jug);
+    if(mc){const[from,to]=MC_DATE_RANGES[mc].map(parseFecha);data=data.filter(r=>{const d=parseFecha(r[0]);return d>=from&&d<=to;});}
+    data.sort((a,b)=>parseFecha(a[0])-parseFecha(b[0]));
+    const labels=data.map(r=>r[0]);
+    const lo={tension:.3,pointRadius:4,fill:false};
+    makeChart('c-wellness-ind',{type:'line',data:{labels,datasets:[
+      {...lo,label:'Sueño',data:data.map(r=>r[2]),borderColor:'#74acdf',pointBackgroundColor:'#74acdf'},
+      {...lo,label:'Cansancio',data:data.map(r=>r[3]),borderColor:'#ef4444',pointBackgroundColor:'#ef4444'},
+      {...lo,label:'Dolor',data:data.map(r=>r[4]),borderColor:'#f59e0b',pointBackgroundColor:'#f59e0b'},
+      {...lo,label:'Estrés',data:data.map(r=>r[5]),borderColor:'#a855f7',pointBackgroundColor:'#a855f7'},
+      {...lo,label:'Energía',data:data.map(r=>r[6]),borderColor:'#22c55e',pointBackgroundColor:'#22c55e'},
+    ]},options:{plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#6a8aaa',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},
+      y:{min:1,max:5,ticks:{color:'#6a8aaa',stepSize:1},grid:{color:'rgba(255,255,255,.05)'}}
+    }}});
+    const tot=data.map(r=>r[2]+r[3]+r[4]+r[5]+r[6]);
+    makeChart('c-wellness-total',{type:'bar',data:{labels,datasets:[{
+      data:tot,backgroundColor:tot.map(v=>v>18?'rgba(34,197,94,.75)':v>=15?'rgba(245,158,11,.75)':'rgba(239,68,68,.75)'),
+      borderRadius:4,borderColor:'transparent'
+    }]},options:{plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#6a8aaa',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},
+      y:{min:5,max:25,ticks:{color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}}
+    }}});
+    const coms=data.filter(r=>r[7]);
+    document.getElementById('wellness-comments').innerHTML=coms.length
+      ?`<div class="section-title mb16">Comentarios</div>`+coms.map(r=>`<div class="comment-item"><div class="comment-date">${r[0]}</div><div class="comment-text">💬 ${r[7]}</div></div>`).join(''):'';
+  }
+
+  /* ---- INIT ---- */
+  renderEquipo(latestDate);
+
+  document.getElementById('sel-fecha-w').addEventListener('change', e=>renderEquipo(e.target.value));
+
+  document.getElementById('btn-mode-equipo').addEventListener('click',()=>{
+    document.getElementById('view-w-equipo').style.display='';
+    document.getElementById('view-w-ind').style.display='none';
+    document.getElementById('ctrl-equipo').style.display='flex';
+    document.getElementById('ctrl-individual').style.display='none';
+    document.getElementById('btn-mode-equipo').classList.add('active');
+    document.getElementById('btn-mode-ind').classList.remove('active');
+  });
+  document.getElementById('btn-mode-ind').addEventListener('click',()=>{
+    document.getElementById('view-w-equipo').style.display='none';
+    document.getElementById('view-w-ind').style.display='';
+    document.getElementById('ctrl-equipo').style.display='none';
+    document.getElementById('ctrl-individual').style.display='flex';
+    document.getElementById('btn-mode-equipo').classList.remove('active');
+    document.getElementById('btn-mode-ind').classList.add('active');
+    renderIndividual();
+  });
+  document.getElementById('sel-jug-w').addEventListener('change', renderIndividual);
+  document.getElementById('sel-mc-w').addEventListener('change', renderIndividual);
+}
+
+/* ===== TAB: RPE ===== */
+function renderRPE() {
+  const el = document.getElementById('tab-rpe');
+  const allDates = [...new Set(RPE_RAW.map(r=>r[0]))]
+    .sort((a,b)=>parseFecha(b)-parseFecha(a));
+  const latestDate = allDates[0] || '';
+  const jugadores  = uniqueSorted(RPE_RAW, r=>r[1]);
+
+  const rpeColor  = v => v<=3?'rgba(34,197,94,.8)':v<=6?'rgba(245,158,11,.8)':v<=8?'rgba(239,68,68,.8)':'rgba(124,58,237,.8)';
+  const rpeBg     = v => v<=3?'rgba(34,197,94,.18)':v<=6?'rgba(245,158,11,.18)':v<=8?'rgba(239,68,68,.25)':'rgba(124,58,237,.25)';
+  const rpeClr    = v => v<=3?'#22c55e':v<=6?'#f59e0b':v<=8?'#ef4444':'#a78bfa';
+  const rpeZone   = v => v<=3?'Ligero':v<=6?'Moderado':v<=8?'Duro':'Máximo';
+
+  el.innerHTML = `
+    <div class="player-select-row" style="gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-mode-rpe-eq">📊 Equipo</button>
+        <button class="mode-btn" id="btn-mode-rpe-ind">👤 Individual</button>
+      </div>
+      <div id="ctrl-rpe-eq" style="display:flex;align-items:center;gap:10px">
+        <span class="filter-label">Fecha:</span>
+        <select id="sel-fecha-r" style="min-width:150px">
+          ${allDates.map(d=>`<option value="${d}">${d}</option>`).join('')}
+        </select>
+        <span class="response-badge" id="r-response-badge">—</span>
+      </div>
+      <div id="ctrl-rpe-ind" style="display:none;align-items:center;gap:10px">
+        <span class="filter-label">Jugador:</span>
+        <select id="sel-jug-r" style="min-width:200px">
+          ${jugadores.map(j=>`<option value="${j}">${j}</option>`).join('')}
+        </select>
+        <span class="filter-label">Microciclo:</span>
+        <select id="sel-mc-r">
+          <option value="">Todos</option>
+          <option value="1">MC 1 (Abril)</option>
+          <option value="2">MC 2 (Mayo)</option>
+          <option value="3">MC 3 (Junio)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- VISTA EQUIPO -->
+    <div id="view-rpe-eq">
+      <div id="r-alerts"></div>
+      <div class="card mb16">
+        <div class="chart-title">💪 RPE del Equipo — Percepción de Esfuerzo Post-Sesión</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          Escala 1–10 · <span style="color:#22c55e">■ 1–3 Ligero</span> &nbsp;
+          <span style="color:#f59e0b">■ 4–6 Moderado</span> &nbsp;
+          <span style="color:#ef4444">■ 7–8 Duro</span> &nbsp;
+          <span style="color:#a78bfa">■ 9–10 Máximo</span>
+        </p>
+        <div style="overflow-x:auto"><div id="r-heatmap"></div></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">📊 ¿Cómo vivió el equipo la sesión?</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Distribución de RPE por valor — quién respondió qué</p>
+        <div class="dist-grid" id="r-dist"></div>
+      </div>
+    </div>
+
+    <!-- VISTA INDIVIDUAL -->
+    <div id="view-rpe-ind" style="display:none">
+      <div class="legend-row mb16">
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Ligero (1–3)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Moderado (4–6)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Duro (7–8)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Máximo (9–10)</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title" id="r-chart-title">RPE por Sesión</div>
+        <canvas id="c-rpe-ind" height="200"></canvas>
+      </div>
+      <div class="chart-row mt16">
+        <div class="chart-wrap">
+          <div class="chart-title">Distribución de Intensidades</div>
+          <canvas id="c-rpe-dist" height="200"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="card-label" style="margin-bottom:12px">Estadísticas</div>
+          <div id="rpe-stats"></div>
+        </div>
+      </div>
+      <div id="rpe-comments" class="comments-list mt16"></div>
+    </div>
+  `;
+
+  /* ---- VISTA EQUIPO ---- */
+  function renderRpeEquipo(fecha) {
+    const rows = RPE_RAW.filter(r=>r[0]===fecha);
+    const total_jug = JUGADORES.length || 19;
+    document.getElementById('r-response-badge').innerHTML =
+      `<strong>${rows.length}</strong>/${total_jug} respondieron`;
+
+    // Alertas
+    const maximos = rows.filter(r=>r[2]>=9);
+    const duros   = rows.filter(r=>r[2]>=7 && r[2]<=8);
+    const bajos   = rows.filter(r=>r[2]<=3);
+    let alertHtml = '';
+    if (maximos.length) alertHtml += `
+      <div class="alert-box alert-box-red">
+        <div class="alert-box-title">🔴 RPE Máximo (9–10) — Monitorear recuperación</div>
+        <div class="alert-tags">${maximos.map(r=>`<span class="alert-tag-red">${r[1]} → RPE ${r[2]}</span>`).join('')}</div>
+      </div>`;
+    if (duros.length) alertHtml += `
+      <div class="alert-box alert-box-yellow">
+        <div class="alert-box-title">🟡 RPE Duro (7–8) — Alta intensidad</div>
+        <div class="alert-tags">${duros.map(r=>`<span class="alert-tag-yellow">${r[1]} → RPE ${r[2]}</span>`).join('')}</div>
+      </div>`;
+    if (bajos.length) alertHtml += `
+      <div class="alert-box" style="background:rgba(116,172,223,.1);border:1px solid rgba(116,172,223,.3);margin-bottom:10px">
+        <div class="alert-box-title" style="color:var(--blue)">🔵 RPE Ligero (1–3) — Verificar si es intencional</div>
+        <div class="alert-tags">${bajos.map(r=>`<span style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(116,172,223,.15);color:var(--blue);border:1px solid rgba(116,172,223,.3)">${r[1]} → RPE ${r[2]}</span>`).join('')}</div>
+      </div>`;
+    if (!alertHtml) alertHtml = `<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:12px 18px;margin-bottom:10px;color:#22c55e;font-weight:700;font-size:13px">✅ Todos con RPE en zona moderada</div>`;
+    document.getElementById('r-alerts').innerHTML = alertHtml;
+
+    // Tabla — ordenada de mayor a menor RPE
+    const sorted = [...rows].sort((a,b)=>b[2]-a[2]);
+    const avg = rows.length ? (rows.reduce((s,r)=>s+r[2],0)/rows.length).toFixed(1) : '—';
+
+    document.getElementById('r-heatmap').innerHTML = rows.length===0
+      ? `<p style="color:var(--muted);padding:16px">Sin respuestas para esta fecha.</p>`
+      : `
+        <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap">
+          <span style="font-size:13px;color:var(--muted)">RPE promedio del equipo: <strong style="color:${rpeClr(parseFloat(avg))};font-size:18px">${avg}</strong></span>
+          <span style="font-size:13px;color:var(--muted)">Zona: <strong style="color:${rpeClr(parseFloat(avg))}">${rpeZone(Math.round(parseFloat(avg)))}</strong></span>
+        </div>
+        <table class="doc-table" style="min-width:500px">
+          <thead><tr>
+            <th>JUGADOR</th>
+            <th style="text-align:center">RPE</th>
+            <th style="text-align:center">ZONA</th>
+            <th>COMENTARIO</th>
+          </tr></thead>
+          <tbody>${sorted.map(r=>`<tr>
+            <td style="font-weight:700;color:var(--white)">${r[1]}</td>
+            <td class="heatmap-cell" style="background:${rpeBg(r[2])};color:${rpeClr(r[2])};font-size:22px">${r[2]}</td>
+            <td style="text-align:center"><span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:${rpeBg(r[2])};color:${rpeClr(r[2])}">${rpeZone(r[2])}</span></td>
+            <td style="color:var(--muted);font-size:12px">${r[3]||'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+
+    // Distribución por valor agrupado en zonas
+    const zones = [
+      {label:'Ligero', range:[1,2,3], clr:'#22c55e', bg:'rgba(34,197,94,.18)'},
+      {label:'Moderado', range:[4,5,6], clr:'#f59e0b', bg:'rgba(245,158,11,.18)'},
+      {label:'Duro', range:[7,8], clr:'#ef4444', bg:'rgba(239,68,68,.25)'},
+      {label:'Máximo', range:[9,10], clr:'#a78bfa', bg:'rgba(124,58,237,.2)'},
+    ];
+    let distHtml='';
+    zones.forEach(z=>{
+      const grp={};
+      z.range.forEach(v=>{ grp[v]=[]; });
+      rows.forEach(r=>{ if(grp[r[2]]!==undefined) grp[r[2]].push(r[1].split(' ')[0]); });
+      const hasData = z.range.some(v=>grp[v].length>0);
+      if(!hasData) return;
+      distHtml+=`<div class="dist-card" style="border-top:3px solid ${z.clr}">
+        <div class="dist-dim-title" style="color:${z.clr}">${z.label}</div>
+        ${z.range.map(v=>{
+          if(!grp[v].length) return '';
+          return `<div class="dist-row" style="background:${z.bg}">
+            <span class="dist-val" style="color:${z.clr}">${v}</span>
+            <span class="dist-names">${grp[v].join(', ')}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    });
+    document.getElementById('r-dist').innerHTML = distHtml || `<p style="color:var(--muted);padding:8px">Sin datos para esta fecha.</p>`;
+  }
+
+  /* ---- VISTA INDIVIDUAL ---- */
+  function renderRpeInd() {
+    const jug = document.getElementById('sel-jug-r').value;
+    const mc  = document.getElementById('sel-mc-r').value;
+    document.getElementById('r-chart-title').textContent = `RPE por Sesión — ${jug}`;
+    const MC_DATES={'1':['20/04/2026','26/04/2026'],'2':['15/05/2026','18/05/2026'],'3':['08/06/2026','15/06/2026']};
+    let data=RPE_RAW.filter(r=>r[1]===jug);
+    if(mc){const[from,to]=MC_DATES[mc].map(parseFecha);data=data.filter(r=>{const d=parseFecha(r[0]);return d>=from&&d<=to;});}
+    data.sort((a,b)=>parseFecha(a[0])-parseFecha(b[0]));
+    const labels=data.map(r=>r[0]);
+    const rpes=data.map(r=>r[2]);
+    makeChart('c-rpe-ind',{type:'bar',data:{labels,datasets:[{data:rpes,backgroundColor:rpes.map(rpeColor),borderRadius:5,borderColor:'transparent'}]},options:{
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6a8aaa',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},
+              y:{min:0,max:10,ticks:{color:'#6a8aaa',stepSize:1},grid:{color:'rgba(255,255,255,.05)'}}}
+    }});
+    const dist=[0,0,0,0];
+    rpes.forEach(v=>{if(v<=3)dist[0]++;else if(v<=6)dist[1]++;else if(v<=8)dist[2]++;else dist[3]++;});
+    makeChart('c-rpe-dist',{type:'doughnut',data:{
+      labels:['Ligero (1-3)','Moderado (4-6)','Duro (7-8)','Máximo (9-10)'],
+      datasets:[{data:dist,backgroundColor:['rgba(34,197,94,.8)','rgba(245,158,11,.8)','rgba(239,68,68,.8)','rgba(124,58,237,.8)'],borderColor:'transparent'}]
+    },options:{plugins:{legend:{labels:{color:'#e8f0fa',font:{size:11}}}}}});
+    const avg=rpes.length?(rpes.reduce((a,b)=>a+b,0)/rpes.length).toFixed(1):'—';
+    document.getElementById('rpe-stats').innerHTML=`
+      <div class="card" style="margin-bottom:8px"><div class="card-label">RPE Promedio</div><div class="card-value">${avg}</div></div>
+      <div class="card" style="margin-bottom:8px"><div class="card-label">RPE Máximo</div><div class="card-value" style="color:var(--red)">${rpes.length?Math.max(...rpes):'—'}</div></div>
+      <div class="card"><div class="card-label">Sesiones</div><div class="card-value">${rpes.length}</div></div>`;
+    const coms=data.filter(r=>r[3]);
+    document.getElementById('rpe-comments').innerHTML=coms.length
+      ?`<div class="section-title mb16">Comentarios Post-Sesión</div>`+coms.map(r=>`<div class="comment-item" style="border-left-color:${rpeColor(r[2])}"><div class="comment-date">${r[0]} · RPE ${r[2]}</div><div class="comment-text">💬 ${r[3]}</div></div>`).join(''):'';
+  }
+
+  /* ---- INIT ---- */
+  renderRpeEquipo(latestDate);
+  document.getElementById('sel-fecha-r').addEventListener('change', e=>renderRpeEquipo(e.target.value));
+  document.getElementById('btn-mode-rpe-eq').addEventListener('click',()=>{
+    document.getElementById('view-rpe-eq').style.display='';
+    document.getElementById('view-rpe-ind').style.display='none';
+    document.getElementById('ctrl-rpe-eq').style.display='flex';
+    document.getElementById('ctrl-rpe-ind').style.display='none';
+    document.getElementById('btn-mode-rpe-eq').classList.add('active');
+    document.getElementById('btn-mode-rpe-ind').classList.remove('active');
+  });
+  document.getElementById('btn-mode-rpe-ind').addEventListener('click',()=>{
+    document.getElementById('view-rpe-eq').style.display='none';
+    document.getElementById('view-rpe-ind').style.display='';
+    document.getElementById('ctrl-rpe-eq').style.display='none';
+    document.getElementById('ctrl-rpe-ind').style.display='flex';
+    document.getElementById('btn-mode-rpe-eq').classList.remove('active');
+    document.getElementById('btn-mode-rpe-ind').classList.add('active');
+    renderRpeInd();
+  });
+  document.getElementById('sel-jug-r').addEventListener('change', renderRpeInd);
+  document.getElementById('sel-mc-r').addEventListener('change', renderRpeInd);
+}
+
+/* ===== TAB: BASE DE DATOS ===== */
+/* ===== SESSION STORAGE ===== */
+const _SK = 'monitoreo_u17_sessions';
+const _getSessions = () => JSON.parse(localStorage.getItem(_SK)||'[]');
+const _saveSessions = arr => localStorage.setItem(_SK, JSON.stringify(arr));
+const _addSession = s => { const a=_getSessions(); a.unshift(s); _saveSessions(a); };
+const _deleteSession = id => _saveSessions(_getSessions().filter(s=>s.id!==id));
+
+const TACTICO_OPTS = ['Sintético + Global','Técnico + Sint + Global','Técnico + Partido','Partido','Analítico'];
+const FISICO_OPTS  = ['Control Motor','Fza estructural','Potencia','Descarga activa','Sin trabajo físico'];
+
+function toHTMLDate(ddmmyyyy) {
+  if (!ddmmyyyy) return '';
+  const [d,m,y] = ddmmyyyy.split('/');
+  return `${y}-${m}-${d}`;
+}
+function fromHTMLDate(yyyymmdd) {
+  if (!yyyymmdd) return '';
+  const [y,m,d] = yyyymmdd.split('-');
+  return `${d}/${m}/${y}`;
+}
+function todayHTML() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+
+function renderBase() {
+  const el = document.getElementById('tab-base');
+
+  el.innerHTML = `
+    <div class="ns-header">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-ns-form">⊕ Nueva Sesión</button>
+        <button class="mode-btn" id="btn-ns-hist">📋 Historial</button>
+      </div>
+      <span style="font-size:12px;color:var(--muted)" id="ns-session-count"></span>
+    </div>
+    <div id="ns-view-form"></div>
+    <div id="ns-view-hist" style="display:none"></div>
+  `;
+
+  /* ---- helpers ---- */
+  const posMap = {};
+  JUGADORES.forEach(([j,p])=>{ posMap[j]=p; });
+  const rpeForDate = fecha => {
+    const map = {};
+    RPE_RAW.filter(r=>r[0]===fecha).forEach(r=>{ map[r[1]]=r[2]; });
+    return map;
+  };
+  const welForDate = fecha => {
+    const map = {};
+    WELLNESS_RAW.filter(r=>r[0]===fecha).forEach(r=>{ map[r[1]]={sue:r[2],can:r[3],dom:r[4],est:r[5],ani:r[6],tot:r[2]+r[3]+r[4]+r[5]+r[6]}; });
+    return map;
+  };
+  const rpeColor = v => !v?'var(--muted)':v<=3?'#22c55e':v<=6?'#f59e0b':v<=8?'#ef4444':'#a78bfa';
+
+  /* ---- FORM ---- */
+  function renderForm() {
+    const jugadores = JUGADORES.length ? JUGADORES.map(r=>r[0]) : uniqueSorted(WELLNESS_RAW, r=>r[1]);
+    document.getElementById('ns-view-form').innerHTML = `
+      <div class="card">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">
+          Completá los datos de la sesión. El RPE y el Wellness se traen automáticamente de los formularios del día.
+        </div>
+        <div class="ns-fields">
+          <div class="ns-field">
+            <label>Fecha</label>
+            <input type="date" id="ns-fecha" value="${todayHTML()}">
+          </div>
+          <div class="ns-field">
+            <label>Microciclo</label>
+            <select id="ns-mc">
+              <option value="1">MC 1 — Abril</option>
+              <option value="2">MC 2 — Mayo</option>
+              <option value="3" selected>MC 3 — Junio</option>
+              <option value="4">MC 4</option>
+            </select>
+          </div>
+          <div class="ns-field">
+            <label>Estímulo Táctico</label>
+            <select id="ns-tac">
+              ${TACTICO_OPTS.map(o=>`<option value="${o}">${o}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ns-field">
+            <label>Estímulo Físico</label>
+            <select id="ns-fis">
+              ${FISICO_OPTS.map(o=>`<option value="${o}">${o}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ns-field">
+            <label>Minutos Totales</label>
+            <input type="number" id="ns-min" placeholder="ej: 90" min="0" max="480" style="font-size:18px;font-weight:800">
+          </div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="ns-players-table">
+            <thead>
+              <tr>
+                <th style="width:36px">
+                  <input type="checkbox" class="ns-chk" id="chk-all" checked title="Seleccionar todos">
+                </th>
+                <th>JUGADOR</th>
+                <th>POSICIÓN</th>
+                <th style="text-align:center">RPE HOY</th>
+                <th style="text-align:center">sRPE (UA)</th>
+                <th style="text-align:center">WELLNESS HOY</th>
+              </tr>
+            </thead>
+            <tbody id="ns-tbody">
+              ${jugadores.map(j=>`
+                <tr id="ns-row-${j.replace(/\s/g,'_')}" class="">
+                  <td><input type="checkbox" class="ns-chk ns-player-chk" data-jug="${j}" checked></td>
+                  <td><strong>${j}</strong></td>
+                  <td style="color:var(--muted)">${posMap[j]||'—'}</td>
+                  <td style="text-align:center" id="ns-rpe-${j.replace(/\s/g,'_')}">—</td>
+                  <td style="text-align:center;font-weight:700" id="ns-srpe-${j.replace(/\s/g,'_')}">—</td>
+                  <td style="text-align:center" id="ns-wel-${j.replace(/\s/g,'_')}">—</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ns-summary" id="ns-summary">
+          <div class="ns-summary-item"><div class="ns-summary-val" id="ns-sum-jug">0</div><div class="ns-summary-lbl">Jugadores</div></div>
+          <div class="ns-summary-item"><div class="ns-summary-val" id="ns-sum-min">—</div><div class="ns-summary-lbl">Minutos</div></div>
+          <div class="ns-summary-item"><div class="ns-summary-val" id="ns-sum-rpe">—</div><div class="ns-summary-lbl">RPE Prom.</div></div>
+          <div class="ns-summary-item"><div class="ns-summary-val" id="ns-sum-srpe">—</div><div class="ns-summary-lbl">sRPE Prom.</div></div>
+          <div style="flex:1"></div>
+          <button class="btn-save" id="btn-guardar">✓ Guardar Sesión</button>
+        </div>
+      </div>
+    `;
+
+    const jugList = JUGADORES.length ? JUGADORES.map(r=>r[0]) : uniqueSorted(WELLNESS_RAW, r=>r[1]);
+
+    function updateRows() {
+      const fecha  = fromHTMLDate(document.getElementById('ns-fecha').value);
+      const min    = parseInt(document.getElementById('ns-min').value)||0;
+      const rpeMap = rpeForDate(fecha);
+      const welMap = welForDate(fecha);
+      let checked=0, rpeSum=0, rpeCount=0, srpeSum=0;
+
+      jugList.forEach(j=>{
+        const key = j.replace(/\s/g,'_');
+        const chk = document.querySelector(`.ns-player-chk[data-jug="${j}"]`);
+        const isChk = chk?.checked;
+        const row   = document.getElementById(`ns-row-${key}`);
+        const rpe   = rpeMap[j];
+        const wel   = welMap[j];
+        const srpe  = (rpe && min) ? rpe*min : null;
+
+        const rpeEl  = document.getElementById(`ns-rpe-${key}`);
+        const srpeEl = document.getElementById(`ns-srpe-${key}`);
+        const welEl  = document.getElementById(`ns-wel-${key}`);
+
+        if (rpeEl)  rpeEl.innerHTML  = rpe  ? `<span style="color:${rpeColor(rpe)};font-weight:800;font-size:16px">${rpe}</span>` : '<span style="color:var(--muted)">—</span>';
+        if (srpeEl) srpeEl.innerHTML = srpe ? `<span style="color:var(--blue);font-weight:800">${srpe.toLocaleString()} UA</span>` : '<span style="color:var(--muted)">—</span>';
+        if (welEl)  welEl.innerHTML  = wel  ? `${pill(colorWellness(wel.tot), wel.tot)}` : '<span style="color:var(--muted)">—</span>';
+        if (row)    row.classList.toggle('unchecked', !isChk);
+
+        if (isChk) {
+          checked++;
+          if (rpe) { rpeSum+=rpe; rpeCount++; }
+          if (srpe) srpeSum+=srpe;
+        }
+      });
+
+      document.getElementById('ns-sum-jug').textContent  = checked;
+      document.getElementById('ns-sum-min').textContent  = min || '—';
+      document.getElementById('ns-sum-rpe').textContent  = rpeCount ? (rpeSum/rpeCount).toFixed(1) : '—';
+      document.getElementById('ns-sum-srpe').textContent = srpeSum  ? Math.round(srpeSum/Math.max(rpeCount,1)).toLocaleString() : '—';
+    }
+
+    // Save
+    document.getElementById('btn-guardar').addEventListener('click', ()=>{
+      const fecha  = fromHTMLDate(document.getElementById('ns-fecha').value);
+      const mc     = +document.getElementById('ns-mc').value;
+      const tac    = document.getElementById('ns-tac').value;
+      const fis    = document.getElementById('ns-fis').value;
+      const min    = parseInt(document.getElementById('ns-min').value)||0;
+      const rpeMap = rpeForDate(fecha);
+      const welMap = welForDate(fecha);
+
+      const players = [];
+      jugList.forEach(j=>{
+        const chk = document.querySelector(`.ns-player-chk[data-jug="${j}"]`);
+        if (!chk?.checked) return;
+        const rpe  = rpeMap[j]||null;
+        const wel  = welMap[j]||null;
+        const srpe = (rpe && min) ? rpe*min : null;
+        players.push({ jugador:j, pos:posMap[j]||'', rpe, srpe, wel });
+      });
+
+      if (!players.length) { alert('Seleccioná al menos un jugador.'); return; }
+      if (!min) { alert('Ingresá los minutos de la sesión.'); return; }
+
+      _addSession({ id: Date.now(), fecha, mc, tac, fis, min, comb:`${tac} + ${fis}`, players });
+
+      // Confirmar
+      const btn = document.getElementById('btn-guardar');
+      btn.textContent = '✓ Guardado!';
+      btn.style.background = '#22c55e';
+      setTimeout(()=>{ btn.textContent='✓ Guardar Sesión'; btn.style.background=''; updateSessionCount(); }, 1500);
+      updateSessionCount();
+    });
+
+    // Checkbox todos
+    document.getElementById('chk-all').addEventListener('change', e=>{
+      document.querySelectorAll('.ns-player-chk').forEach(c=>{ c.checked=e.target.checked; });
+      updateRows();
+    });
+
+    // Eventos
+    document.getElementById('ns-fecha').addEventListener('change', updateRows);
+    document.getElementById('ns-min').addEventListener('input', updateRows);
+    document.querySelectorAll('.ns-player-chk').forEach(c=>c.addEventListener('change', updateRows));
+    updateRows();
+  }
+
+  /* ---- HISTORIAL ---- */
+  function renderHistorial() {
+    const sessions = _getSessions();
+    document.getElementById('ns-view-hist').innerHTML = sessions.length===0
+      ? `<div class="card" style="text-align:center;padding:40px;color:var(--muted)">
+          <div style="font-size:32px;margin-bottom:12px">📋</div>
+          <div>Todavía no cargaste ninguna sesión desde la app.</div>
+          <div style="margin-top:8px;font-size:12px">Usá el botón "⊕ Nueva Sesión" para cargar una.</div>
+        </div>`
+      : `<div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>FECHA</th><th>MC</th><th>TÁCTICO</th><th>FÍSICO</th>
+              <th style="text-align:center">MIN</th>
+              <th style="text-align:center">JUGADORES</th>
+              <th style="text-align:center">RPE PROM</th>
+              <th style="text-align:center">sRPE PROM</th>
+              <th></th>
+            </tr></thead>
+            <tbody>
+              ${sessions.map(s=>{
+                const rpes  = s.players.map(p=>p.rpe).filter(Boolean);
+                const srpes = s.players.map(p=>p.srpe).filter(Boolean);
+                const avgRpe  = rpes.length ? (rpes.reduce((a,b)=>a+b,0)/rpes.length).toFixed(1) : '—';
+                const avgSrpe = srpes.length? Math.round(srpes.reduce((a,b)=>a+b,0)/srpes.length).toLocaleString() : '—';
+                return `<tr class="hist-row-saved">
+                  <td>${s.fecha}</td>
+                  <td>MC ${s.mc}</td>
+                  <td style="font-size:12px">${s.tac}</td>
+                  <td style="font-size:12px">${s.fis}</td>
+                  <td style="text-align:center;font-weight:700">${s.min}'</td>
+                  <td style="text-align:center">${s.players.length}</td>
+                  <td style="text-align:center">${avgRpe}</td>
+                  <td style="text-align:center;color:var(--blue);font-weight:700">${avgSrpe}</td>
+                  <td><button class="btn-del" onclick="delSession(${s.id})">✕</button></td>
+                </tr>
+                ${s.players.map(p=>`
+                  <tr style="background:rgba(116,172,223,.03)">
+                    <td style="color:var(--muted);font-size:11px;padding-left:24px">↳ ${p.jugador}</td>
+                    <td></td>
+                    <td colspan="2" style="color:var(--muted);font-size:11px">${p.pos}</td>
+                    <td></td>
+                    <td></td>
+                    <td style="text-align:center">${p.rpe||'—'}</td>
+                    <td style="text-align:center;color:var(--blue);font-size:12px;font-weight:700">${p.srpe?p.srpe.toLocaleString()+' UA':'—'}</td>
+                    <td></td>
+                  </tr>`).join('')}`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+  }
+
+  /* ---- helpers ---- */
+  function updateSessionCount() {
+    const n = _getSessions().length;
+    document.getElementById('ns-session-count').textContent = n ? `${n} sesión${n!==1?'es':''} guardada${n!==1?'s':''}` : '';
+  }
+
+  window.delSession = function(id) {
+    if (!confirm('¿Eliminar esta sesión?')) return;
+    _deleteSession(id);
+    renderHistorial();
+    updateSessionCount();
+  };
+
+  /* ---- INIT ---- */
+  updateSessionCount();
+  renderForm();
+
+  document.getElementById('btn-ns-form').addEventListener('click',()=>{
+    document.getElementById('ns-view-form').style.display='';
+    document.getElementById('ns-view-hist').style.display='none';
+    document.getElementById('btn-ns-form').classList.add('active');
+    document.getElementById('btn-ns-hist').classList.remove('active');
+  });
+  document.getElementById('btn-ns-hist').addEventListener('click',()=>{
+    document.getElementById('ns-view-form').style.display='none';
+    document.getElementById('ns-view-hist').style.display='';
+    document.getElementById('btn-ns-form').classList.remove('active');
+    document.getElementById('btn-ns-hist').classList.add('active');
+    renderHistorial();
+  });
+}
+
+/* ===== TAB: JUGADORES ===== */
+function renderJugadores() {
+  const el = document.getElementById('tab-jugadores');
+  const posColors = {
+    'Punta':'#74acdf','Central':'#22c55e','Armador':'#f59e0b',
+    'Opuesto':'#ef4444','Libero':'#a855f7'
+  };
+  const posCounts = {};
+  JUGADORES.forEach(([,p])=>{ posCounts[p]=(posCounts[p]||0)+1; });
+
+  el.innerHTML = `
+    <div class="cards-row mb16">
+      ${Object.entries(posCounts).map(([p,n])=>`
+        <div class="card">
+          <div class="card-label">${p}</div>
+          <div class="card-value" style="color:${posColors[p]||'var(--blue)'}">${n}</div>
+          <div class="card-sub">jugadores</div>
+        </div>`).join('')}
+      <div class="card">
+        <div class="card-label">Total Plantilla</div>
+        <div class="card-value">${JUGADORES.length}</div>
+        <div class="card-sub">jugadores</div>
+      </div>
+    </div>
+    <div class="jugadores-grid">
+      ${JUGADORES.map(([nombre,pos],i)=>`
+        <div class="jugador-card">
+          <div class="jugador-num" style="background:linear-gradient(135deg,${posColors[pos]||'#74acdf'}88,${posColors[pos]||'#74acdf'})">
+            ${i+1}
+          </div>
+          <div>
+            <div class="jugador-name">${nombre}</div>
+            <div class="jugador-pos">${pos}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+/* ===== REFRESH / MONITOREO U17 ===== */
+async function doRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  btn.textContent = '⟳ Actualizando...';
+
+  if (_connected && _token) {
+    await loadLiveData();
+  } else {
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    renderActiveTab(activeTab);
+    await new Promise(r => setTimeout(r, 900));
+    const now = new Date();
+    document.getElementById('last-updated').textContent =
+      `Actualizado: ${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+  }
+
+  btn.classList.remove('spinning');
+  btn.disabled = false;
+  btn.textContent = '⟳ MONITOREO U17';
+}
+
+/* ===== TAB SWITCHING ===== */
+function renderActiveTab(tab) {
+  const renders = {
+    grupal: renderGrupal,
+    metricas: renderMetricas,
+    estimulos: renderEstimulos,
+    posiciones: renderPosiciones,
+    wellness: renderWellness,
+    rpe: renderRPE,
+    base: renderBase,
+    jugadores: renderJugadores,
+  };
+  if (renders[tab]) renders[tab]();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-'+tab).classList.add('active');
+    renderActiveTab(tab);
+  });
+});
+
+document.getElementById('btn-refresh').addEventListener('click', doRefresh);
+document.getElementById('btn-auth').addEventListener('click', handleAuth);
+
+/* ===== INIT ===== */
+renderGrupal();
+const now = new Date();
+document.getElementById('last-updated').textContent =
+  `Cargado: ${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+</script>
+</body>
+</html>
