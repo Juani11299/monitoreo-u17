@@ -6,6 +6,8 @@
 <title>MONITOREO U17 — Selección Argentina</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
   --bg:#0b1622;--card:#112236;--card2:#172d47;--border:#1e3a5a;
@@ -1916,11 +1918,44 @@ function renderRPE() {
 
 /* ===== TAB: BASE DE DATOS ===== */
 /* ===== SESSION STORAGE ===== */
-const _SK = 'monitoreo_u17_sessions';
-const _getSessions = () => JSON.parse(localStorage.getItem(_SK)||'[]');
-const _saveSessions = arr => localStorage.setItem(_SK, JSON.stringify(arr));
-const _addSession = s => { const a=_getSessions(); a.unshift(s); _saveSessions(a); };
-const _deleteSession = id => _saveSessions(_getSessions().filter(s=>s.id!==id));
+/* ===== FIREBASE / FIRESTORE ===== */
+const _FB_CONFIG = {
+  apiKey: "PENDING",
+  authDomain: "PENDING",
+  projectId: "PENDING",
+  storageBucket: "PENDING",
+  messagingSenderId: "PENDING",
+  appId: "PENDING"
+};
+
+let _db = null;
+let _firestoreSessions = [];
+
+function _initFirestore() {
+  if (_FB_CONFIG.apiKey === 'PENDING') return;
+  try {
+    firebase.initializeApp(_FB_CONFIG);
+    _db = firebase.firestore();
+    _db.collection('sessions_u17').orderBy('id','desc').onSnapshot(snap => {
+      _firestoreSessions = snap.docs.map(d => d.data());
+      const n = _firestoreSessions.length;
+      const badgeEl = document.getElementById('ns-session-count');
+      if (badgeEl) badgeEl.textContent = n ? `${n} sesión${n!==1?'es':''} guardada${n!==1?'s':''}` : '';
+      if (typeof window._renderHistorial === 'function') {
+        const histEl = document.getElementById('ns-view-hist');
+        if (histEl && histEl.style.display !== 'none') window._renderHistorial();
+      }
+    });
+  } catch(e) { console.warn('Firebase:', e); }
+}
+
+const _getSessions  = () => _firestoreSessions;
+const _addSession   = s  => _db
+  ? _db.collection('sessions_u17').doc(String(s.id)).set(s)
+  : (_firestoreSessions.unshift(s), Promise.resolve());
+const _deleteSession = id => _db
+  ? _db.collection('sessions_u17').doc(String(id)).delete()
+  : (_firestoreSessions = _firestoreSessions.filter(s=>s.id!==id), Promise.resolve());
 
 const TACTICO_OPTS = ['Sintético + Global','Técnico + Sint + Global','Técnico + Partido','Partido','Analítico'];
 const FISICO_OPTS  = ['Control Motor','Fza estructural','Potencia','Descarga activa','Sin trabajo físico'];
@@ -2112,14 +2147,16 @@ function renderBase() {
       if (!players.length) { alert('Seleccioná al menos un jugador.'); return; }
       if (!min) { alert('Ingresá los minutos de la sesión.'); return; }
 
-      _addSession({ id: Date.now(), fecha, mc, tac, fis, min, comb:`${tac} + ${fis}`, players });
-
-      // Confirmar
       const btn = document.getElementById('btn-guardar');
-      btn.textContent = '✓ Guardado!';
-      btn.style.background = '#22c55e';
-      setTimeout(()=>{ btn.textContent='✓ Guardar Sesión'; btn.style.background=''; updateSessionCount(); }, 1500);
-      updateSessionCount();
+      btn.textContent = '⏳ Guardando...';
+      btn.disabled = true;
+      _addSession({ id: Date.now(), fecha, mc, tac, fis, min, comb:`${tac} + ${fis}`, players }).then(()=>{
+        btn.textContent = '✓ Guardado!';
+        btn.style.background = '#22c55e';
+        btn.disabled = false;
+        setTimeout(()=>{ btn.textContent='✓ Guardar Sesión'; btn.style.background=''; updateSessionCount(); }, 1500);
+        updateSessionCount();
+      });
     });
 
     // Checkbox todos
@@ -2194,11 +2231,11 @@ function renderBase() {
     document.getElementById('ns-session-count').textContent = n ? `${n} sesión${n!==1?'es':''} guardada${n!==1?'s':''}` : '';
   }
 
+  window._renderHistorial = renderHistorial;
+
   window.delSession = function(id) {
     if (!confirm('¿Eliminar esta sesión?')) return;
-    _deleteSession(id);
-    renderHistorial();
-    updateSessionCount();
+    _deleteSession(id).then(()=>{ renderHistorial(); updateSessionCount(); });
   };
 
   /* ---- INIT ---- */
@@ -2312,6 +2349,7 @@ document.getElementById('btn-refresh').addEventListener('click', doRefresh);
 document.getElementById('btn-auth').addEventListener('click', handleAuth);
 
 /* ===== INIT ===== */
+_initFirestore();
 renderGrupal();
 const now = new Date();
 document.getElementById('last-updated').textContent =
